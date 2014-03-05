@@ -1,0 +1,5 @@
+C:\Users\brandon\Documents\Programming\games\Cosmic Combat\CosmicCombat\CosmicCombat\CosmicCombat\bin\CosmicCombat.dll
+C:\Users\brandon\Documents\Programming\games\Cosmic Combat\CosmicCombat\CosmicCombat\CosmicCombat\bin\CosmicCombat.pdb
+C:\Users\brandon\Documents\Programming\games\Cosmic Combat\CosmicCombat\CosmicCombat\CosmicCombat\obj\Debug\CosmicCombat.csprojResolveAssemblyReference.cache
+C:\Users\brandon\Documents\Programming\games\Cosmic Combat\CosmicCombat\CosmicCombat\CosmicCombat\obj\Debug\CosmicCombat.dll
+C:\Users\brandon\Documents\Programming\games\Cosmic Combat\CosmicCombat\CosmicCombat\CosmicCombat\obj\Debug\CosmicCombat.pdb

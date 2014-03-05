@@ -19,6 +19,8 @@
   <ItemGroup>
     <Content Include="app.css" />
     <Content Include="default.htm" />
+    <Content Include="jquery.min.js" />
+    <Content Include="reset.min.css" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
