@@ -18,8 +18,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="app.css" />
+    <Content Include="proton-1.0.0.d.ts" />
     <Content Include="default.htm" />
+    <Content Include="jquery.d.ts" />
     <Content Include="jquery.min.js" />
+    <Content Include="proton-1.0.0.js" />
+    <Content Include="proton-1.0.0.min.js" />
     <Content Include="reset.min.css" />
     <Content Include="web.config" />
   </ItemGroup>
