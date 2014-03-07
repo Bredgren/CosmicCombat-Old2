@@ -1,35 +1,24 @@
 ///<reference path="./jquery.d.ts"/>
 ///<reference path="./proton-1.0.0.d.ts"/>
-//class Greeter {
-//    element: HTMLElement;
-//    span: HTMLElement;
-//    timerToken: number;
-//    constructor(element: HTMLElement) {
-//        this.element = element;
-//        this.element.innerHTML += "The time is: ";
-//        this.span = document.createElement('span');
-//        this.element.appendChild(this.span);
-//        this.span.innerText = new Date().toUTCString();
-//    }
-//    start() {
-//        this.timerToken = setInterval(() => this.span.innerHTML = new Date().toUTCString(), 500);
-//    }
-//    stop() {
-//        clearTimeout(this.timerToken);
-//    }
-//}
-//window.onload = () => {
-//    var el = document.getElementById('content');
-//    var greeter = new Greeter(el);
-//    greeter.start();
-//};
-//declare function Proton(proParticleCount?, integrationType?): Proton;
+///<reference path="./box2dweb.d.ts"/>
+var b2Common = Box2D.Common;
+var b2Math = Box2D.Common.Math;
+var b2Collision = Box2D.Collision;
+var b2Shapes = Box2D.Collision.Shapes;
+var b2Dynamics = Box2D.Dynamics;
+var b2Contacts = Box2D.Dynamics.Contacts;
+var b2Controllers = Box2D.Dynamics.Controllers;
+var b2Joints = Box2D.Dynamics.Joints;
+
 var _canvas;
 var _ctx;
+var _world;
 var _emitter;
 var _width = 700;
 var _height = 500;
 var _full_screen = true;
+
+var _body;
 
 var _proton;
 
@@ -52,6 +41,43 @@ window.onload = function () {
     _ctx = _canvas.getContext('2d');
 
     _canvas.addEventListener('mousemove', mousemoveHandler, false);
+
+    _world = new b2Dynamics.b2World(new b2Common.Math.b2Vec2(0, 10), true);
+    var fixDef = new b2Dynamics.b2FixtureDef;
+    fixDef.density = 1.0;
+    fixDef.friction = 0.5;
+    fixDef.restitution = 0.2;
+
+    var bodyDef = new b2Dynamics.b2BodyDef;
+
+    bodyDef.type = b2Dynamics.b2Body.b2_staticBody;
+    bodyDef.position.x = 9;
+    bodyDef.position.y = 13;
+    fixDef.shape = new b2Collision.Shapes.b2PolygonShape;
+    fixDef.shape.SetAsBox(10, 1);
+    _world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+    bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
+    for (var i = 0; i < 10; i++) {
+        if (Math.random() > 0.5) {
+            fixDef.shape = new b2Collision.Shapes.b2PolygonShape;
+            fixDef.shape.SetAsBox(Math.random() + 0.1, Math.random() + 0.1);
+        } else {
+            fixDef.shape = new b2Collision.Shapes.b2CircleShape(Math.random() + 0.1);
+        }
+        bodyDef.position.x = Math.random() * 10;
+        bodyDef.position.y = Math.random() * 10;
+        _body = _world.CreateBody(bodyDef);
+        _body.CreateFixture(fixDef);
+    }
+
+    var debugDraw = new b2Dynamics.b2DebugDraw();
+    debugDraw.SetSprite(_ctx);
+    debugDraw.SetDrawScale(30.0);
+    debugDraw.SetFillAlpha(0.3);
+    debugDraw.SetLineThickness(1.0);
+    debugDraw.SetFlags(b2Dynamics.b2DebugDraw.e_shapeBit | b2Dynamics.b2DebugDraw.e_jointBit);
+    _world.SetDebugDraw(debugDraw);
 
     _proton = new Proton();
     _emitter = new Proton.Emitter();
@@ -84,13 +110,13 @@ window.onload = function () {
 };
 
 function mousemoveHandler(e) {
-    if (e.layerX || e.layerX == 0) {
-        _emitter.p.x = e.layerX;
-        _emitter.p.y = e.layerY;
-    } else if (e.offsetX || e.offsetX == 0) {
-        _emitter.p.x = e.offsetX;
-        _emitter.p.y = e.offsetY;
-    }
+    //if (e.layerX || e.layerX == 0) {
+    //    _emitter.p.x = e.layerX;
+    //    _emitter.p.y = e.layerY;
+    //} else if (e.offsetX || e.offsetX == 0) {
+    //    _emitter.p.x = e.offsetX;
+    //    _emitter.p.y = e.offsetY;
+    //}
 }
 
 function loop() {
@@ -105,10 +131,16 @@ function clear() {
 }
 
 function update() {
-    _proton.update();
+    _world.Step(1 / 60, 10, 10);
+    _world.ClearForces();
+
+    _emitter.p.x = _body.GetPosition().x * 30;
+    _emitter.p.y = _body.GetPosition().y * 30;
 }
 
 function draw() {
+    _world.DrawDebugData();
+    _proton.update();
 }
 
 function queue() {

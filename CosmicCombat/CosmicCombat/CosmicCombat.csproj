@@ -18,6 +18,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="app.css" />
+    <Content Include="Box2dWeb-2.1.a.3.js" />
+    <Content Include="Box2dWeb-2.1.a.3.min.js" />
+    <Content Include="box2dweb.d.ts" />
     <Content Include="proton-1.0.0.d.ts" />
     <Content Include="default.htm" />
     <Content Include="jquery.d.ts" />

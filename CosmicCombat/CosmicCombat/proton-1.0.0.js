@@ -3219,7 +3219,7 @@
     }
 
     CanvasRender.prototype.onProtonUpdate = function () {
-        this.context.clearRect(0, 0, this.element.width, this.element.height);
+        //this.context.clearRect(0, 0, this.element.width, this.element.height);
     }
 
     CanvasRender.prototype.onParticleCreated = function (particle) {
