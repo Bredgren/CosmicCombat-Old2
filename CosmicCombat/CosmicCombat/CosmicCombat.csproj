@@ -21,6 +21,9 @@
     <Content Include="Box2dWeb-2.1.a.3.js" />
     <Content Include="Box2dWeb-2.1.a.3.min.js" />
     <Content Include="box2dweb.d.ts" />
+    <TypeScriptCompile Include="clipper.d.ts" />
+    <Content Include="clipper.js" />
+    <Content Include="clipper_unminified.js" />
     <Content Include="proton-1.0.0.d.ts" />
     <Content Include="default.htm" />
     <Content Include="jquery.d.ts" />
@@ -31,9 +34,10 @@
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="app_old.ts" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="app.coffee" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
