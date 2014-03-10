@@ -41,6 +41,7 @@ VENDOR_JS = "#{PUBLIC_JS}#{SLASH}vendor.js"
 SRC_DIR = ".#{SLASH}app#{SLASH}src"
 VENDOR_DIR = ".#{SLASH}vendor"
 VENDOR_SCRIPTS = "#{VENDOR_DIR}#{SLASH}scripts"
+VENDOR_DEBUG_SCRIPTS = "#{VENDOR_DIR}#{SLASH}debug_scripts"
 VENDOR_STYLES = "#{VENDOR_DIR}#{SLASH}stylesheets"
 NODE_DIR = ".#{SLASH}node_modules"
 NODE_BIN_DIR = "#{NODE_DIR}#{SLASH}.bin"
@@ -226,9 +227,12 @@ notify = (message, msgLvl, title='Cake Status') ->
         'Cake Status', message]
 
 # Compile vendor scripts and styles
-compileVendorFiles = ->
+compileVendorFiles = (debug=false)->
   console.log("Combining vendor scripts to #{VENDOR_JS}".yellow)
-  _compileFiles(VENDOR_SCRIPTS, VENDOR_JS, VENDOR_JS_FILES)
+  if debug
+    _compileFiles(VENDOR_DEBUG_SCRIPTS, VENDOR_JS, VENDOR_JS_FILES)
+  else
+    _compileFiles(VENDOR_SCRIPTS, VENDOR_JS, VENDOR_JS_FILES)
 
 # Helper function for compiling files
 _compileFiles = (dir, target, orderedFiles=[]) ->
@@ -347,7 +351,7 @@ option '-p', '--port [PORT]', 'Specify port to run server on'
 task 'build', 'Build coffee2js using Rehab', (options) ->
   initOptions(options)
   checkDep ->
-    compileVendorFiles()
+    compileVendorFiles(true)
     buildSource(options)
 
 task 'build:vendor', 'Combine vendor scripts into one file', ->
@@ -377,7 +381,7 @@ task 'watch', 'Watch all files in src and compile as needed', (options) ->
     watch SRC_DIR, ->
       buildSource(options)
     watch VENDOR_DIR, ->
-      compileVendorFiles()
+      compileVendorFiles(true)
     watch 'Cakefile', ->
       console.log updateMsg.yellow
       notify updateMsg, MessageLevel.INFO
