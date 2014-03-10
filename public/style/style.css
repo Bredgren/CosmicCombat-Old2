@@ -1,0 +1,23 @@
+
+canvas {
+    position: absolute;
+    background-color: black;
+}
+
+/* #game-frame { */
+/*     margin: auto; */
+/*     width: 800px; */
+/*     height: 600px; */
+
+/*     -webkit-touch-callout: none; */
+/*     -webkit-user-select: none; */
+/*     -khtml-user-select: none; */
+/*     -moz-user-select: none; */
+/*     -ms-user-select: none; */
+/*     user-select: none; */
+/*     outline: none; */
+/* } */
+
+/* #bgd-canvas { */
+/*     background: rgb(109, 194, 255); */
+/* } */
