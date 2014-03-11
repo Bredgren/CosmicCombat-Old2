@@ -1798,27 +1798,34 @@
   // Helper function to support Inheritance in Javascript
   if (typeof (Inherit) == 'undefined')
   {
-    var Inherit = function (ce, ce2)
-    {
-      var p;
-      if (typeof (Object.getOwnPropertyNames) == 'undefined')
-      {
-        for (p in ce2.prototype)
-          if (typeof (ce.prototype[p]) == 'undefined' || ce.prototype[p] == Object.prototype[p]) ce.prototype[p] = ce2.prototype[p];
-        for (p in ce2)
-          if (typeof (ce[p]) == 'undefined') ce[p] = ce2[p];
-        ce.$baseCtor = ce2;
-      }
-      else
-      {
-        var props = Object.getOwnPropertyNames(ce2.prototype);
-        for (var i = 0; i < props.length; i++)
-          if (typeof (Object.getOwnPropertyDescriptor(ce.prototype, props[i])) == 'undefined') Object.defineProperty(ce.prototype, props[i], Object.getOwnPropertyDescriptor(ce2.prototype, props[i]));
-        for (p in ce2)
-          if (typeof (ce[p]) == 'undefined') ce[p] = ce2[p];
-        ce.$baseCtor = ce2;
-      }
-    };
+    // var Inherit = function (ce, ce2)
+    // {
+      // var p;
+      // if (typeof (Object.getOwnPropertyNames) == 'undefined')
+      // {
+        // for (p in ce2.prototype)
+          // if (typeof (ce.prototype[p]) == 'undefined' || ce.prototype[p] == Object.prototype[p]) ce.prototype[p] = ce2.prototype[p];
+        // for (p in ce2)
+          // if (typeof (ce[p]) == 'undefined') ce[p] = ce2[p];
+        // ce.$baseCtor = ce2;
+      // }
+      // else
+      // {
+        // var props = Object.getOwnPropertyNames(ce2.prototype);
+        // for (var i = 0; i < props.length; i++)
+          // if (typeof (Object.getOwnPropertyDescriptor(ce.prototype, props[i])) == 'undefined') Object.defineProperty(ce.prototype, props[i], Object.getOwnPropertyDescriptor(ce2.prototype, props[i]));
+        // for (p in ce2)
+          // if (typeof (ce[p]) == 'undefined') ce[p] = ce2[p];
+        // ce.$baseCtor = ce2;
+      // }
+    // };
+    var emptyFn = function() {};
+    var Inherit = function(cls, base) {
+      var tmpCtr = cls;
+      emptyFn.prototype = base.prototype;
+      cls.prototype = new emptyFn;
+      cls.prototype.constructor = tmpCtr;
+   };
   }
   ClipperLib.Path = function ()
   {
@@ -3020,6 +3027,7 @@
       this.ZFillFunction = null; // function (IntPoint vert1, IntPoint vert2, ref IntPoint intersectPt);
     }
   };
+  Inherit(ClipperLib.Clipper, ClipperLib.ClipperBase);
   ClipperLib.Clipper.ioReverseSolution = 1;
   ClipperLib.Clipper.ioStrictlySimple = 2;
   ClipperLib.Clipper.ioPreserveCollinear = 4;
@@ -6164,7 +6172,7 @@
     ClipperLib.Clipper.AddPolyNodeToPaths(polytree, ClipperLib.Clipper.NodeType.ntClosed, result);
     return result;
   };
-  Inherit(ClipperLib.Clipper, ClipperLib.ClipperBase);
+  // Inherit(ClipperLib.Clipper, ClipperLib.ClipperBase);
   ClipperLib.Clipper.NodeType = {
     ntAny: 0,
     ntOpen: 1,
