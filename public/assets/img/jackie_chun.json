@@ -1,0 +1,56 @@
+{"frames": {
+"jackie_stand_01":
+{
+    "frame": {"x":4,"y":3,"w":32,"h":48},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":32,"h":48},
+    "sourceSize": {"w":32,"h":48}
+},
+"jackie_stance_01":
+{
+    "frame": {"x":39,"y":3,"w":36,"h":48},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":36,"h":48},
+    "sourceSize": {"w":36,"h":48}
+},
+"jackie_stance_02":
+{
+    "frame": {"x":78,"y":3,"w":44,"h":48},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":44,"h":48},
+    "sourceSize": {"w":44,"h":48}
+},
+"jackie_stance_03":
+{
+    "frame": {"x":125,"y":5,"w":45,"h":46},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":45,"h":46},
+    "sourceSize": {"w":45,"h":46}
+},
+"jackie_stance_04":
+{
+    "frame": {"x":173,"y":9,"w":47,"h":42},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":47,"h":42},
+    "sourceSize": {"w":47,"h":42}
+},
+"jackie_stance_05":
+{
+    "frame": {"x":223,"y":10,"w":46,"h":41},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":46,"h":41},
+    "sourceSize": {"w":46,"h":41}
+}
+
+},
+"meta": {
+    "image": "reference_jackie_chun.png",
+    "size": {"w":812,"h":1418}
+}
+}

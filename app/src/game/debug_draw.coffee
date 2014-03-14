@@ -1,9 +1,9 @@
 
-#_require global
+#_require ../global
 
 class DebugDraw extends b2Dynamics.b2DebugDraw
 
-  constructor: () ->
+  constructor: (@camera) ->
     @_line_width = 1
     @_alpha = 0.5
     @_fill_alpha = 0.5
@@ -18,23 +18,29 @@ class DebugDraw extends b2Dynamics.b2DebugDraw
   DrawCircle: (center, radius, color) ->
     @_graphics.alpha = @_alpha
     @_graphics.lineStyle(@_line_width, color.color)
-    @_graphics.drawCircle(center.x * @_scale, center.y * @_scale,
-                        radius * @_scale)
+    center = @camera.worldToScreen({
+      x: center.x * @_scale,
+      y: center.y * @_scale})
+    @_graphics.drawCircle(center.x, center.y, radius * @_scale)
 
   DrawPolygon: (vertices, vertexCount, color) ->
     @_graphics.lineStyle(@_line_width, color.color)
     @_graphics.alpha = @_alpha
     v0 = vertices[0]
-    @_graphics.moveTo(v0.x * @_scale, v0.y * @_scale)
+    v0 = @camera.worldToScreen({x: v0.x * @_scale, y: v0.y * @_scale})
+    @_graphics.moveTo(v0.x, v0.y)
     for v in vertices[1..]
-      @_graphics.lineTo(v.x * @_scale, v.y * @_scale)
-    @_graphics.lineTo(v0.x * @_scale, v0.y * @_scale)
+      v = @camera.worldToScreen({x: v.x * @_scale, y: v.y * @_scale})
+      @_graphics.lineTo(v.x, v.y)
+    @_graphics.lineTo(v0.x, v0.y)
 
   DrawSegment: (p1, p2, color) ->
     @_graphics.lineStyle(@_line_width, color.color)
     @_graphics.alpha = @_alpha
-    @_graphics.moveTo(p1.x * @_scale, p1.y * @_scale)
-    @_graphics.lineTo(p2.x * @_scale, p2.y * @_scale)
+    p1 = @camera.worldToScreen({x: p1.x * @_scale, y: p1.y * @_scale})
+    p2 = @camera.worldToScreen({x: p2.x * @_scale, y: p2.y * @_scale})
+    @_graphics.moveTo(p1.x, p1.y)
+    @_graphics.lineTo(p2.x, p2.y)
 
   DrawSolidCircle: (center, radius, axis, color) ->
     @_graphics.beginFill(color.color)
