@@ -215,18 +215,14 @@ main = ->
     console.log("key down:", e.keyCode)
     if e.keyCode == 192
       game.toggleDevMode()
-      game.toggleDebugDraw()
     # else if e.keyCode == 32
     #   if not stance.playing
     #     stance.gotoAndPlay(0)
     game.onKeyDown(e.keyCode)
 
-  # keyUpListener = (e) ->
-  #   console.log("key up:", e.keyCode)
-  #   if e.keyCode == 192
-  #     game.toggleDevMode()
-  #     game.toggleDebugDraw()
-  #   game.onKeyUp(e.keyCode)
+  keyUpListener = (e) ->
+    console.log("key up:", e.keyCode)
+    game.onKeyUp(e.keyCode)
 
   # Catch accidental leaving
   onBeforeUnload = (e) ->
@@ -242,26 +238,26 @@ main = ->
     # return null
 
   mouseMoveHandler = (e) ->
-    x = e.clientX
-    y = e.clientY
+    x = e.layerX
+    y = e.layerY
     console.log("mouse:", x, y)
     game.onMouseMove({x: x, y: y})
 
   clickHandler = (e) ->
-    x = e.clientX
-    y = e.clientY
+    x = e.layerX
+    y = e.layerY
     console.log("click:", x, y)
 
   mouseDownHandler = (e) ->
     console.log("mouse down")
-    x = e.clientX
-    y = e.clientY
+    x = e.layerX
+    y = e.layerY
     game.onMouseDown({x: x, y: y})
 
   mouseUpHandler = (e) ->
     console.log("mouse up")
-    x = e.clientX
-    y = e.clientY
+    x = e.layerX
+    y = e.layerY
     game.onMouseUp({x: x, y: y})
 
   mouseOutHandler = (e) ->
@@ -281,6 +277,7 @@ main = ->
 
   window.onresize = onResize
   document.body.addEventListener('keydown', keyDownListener, false)
+  document.body.addEventListener('keyup', keyUpListener, false)
   window.onbeforeunload = onBeforeUnload
   event_catcher.addEventListener('mousemove', mouseMoveHandler, false)
   event_catcher.addEventListener('click', clickHandler, false)

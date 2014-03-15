@@ -41,7 +41,6 @@
       this._line_width = 1;
       this._alpha = 0.5;
       this._fill_alpha = 0.5;
-      this._scale = 1.0;
       this.m_sprite = {
         graphics: {
           clear: function() {}
@@ -60,11 +59,8 @@
     DebugDraw.prototype.DrawCircle = function(center, radius, color) {
       this._graphics.alpha = this._alpha;
       this._graphics.lineStyle(this._line_width, color.color);
-      center = this.camera.worldToScreen({
-        x: center.x * this._scale,
-        y: center.y * this._scale
-      });
-      return this._graphics.drawCircle(center.x, center.y, radius * this._scale);
+      center = this.camera.worldToScreen(center);
+      return this._graphics.drawCircle(center.x, center.y, radius * settings.PPM);
     };
 
     DebugDraw.prototype.DrawPolygon = function(vertices, vertexCount, color) {
@@ -73,18 +69,12 @@
       this._graphics.lineStyle(this._line_width, color.color);
       this._graphics.alpha = this._alpha;
       v0 = vertices[0];
-      v0 = this.camera.worldToScreen({
-        x: v0.x * this._scale,
-        y: v0.y * this._scale
-      });
+      v0 = this.camera.worldToScreen(v0);
       this._graphics.moveTo(v0.x, v0.y);
       _ref = vertices.slice(1);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         v = _ref[_i];
-        v = this.camera.worldToScreen({
-          x: v.x * this._scale,
-          y: v.y * this._scale
-        });
+        v = this.camera.worldToScreen(v);
         this._graphics.lineTo(v.x, v.y);
       }
       return this._graphics.lineTo(v0.x, v0.y);
@@ -93,14 +83,8 @@
     DebugDraw.prototype.DrawSegment = function(p1, p2, color) {
       this._graphics.lineStyle(this._line_width, color.color);
       this._graphics.alpha = this._alpha;
-      p1 = this.camera.worldToScreen({
-        x: p1.x * this._scale,
-        y: p1.y * this._scale
-      });
-      p2 = this.camera.worldToScreen({
-        x: p2.x * this._scale,
-        y: p2.y * this._scale
-      });
+      p1 = this.camera.worldToScreen(p1);
+      p2 = this.camera.worldToScreen(p2);
       this._graphics.moveTo(p1.x, p1.y);
       return this._graphics.lineTo(p2.x, p2.y);
     };
@@ -159,75 +143,172 @@
   })(b2Dynamics.b2DebugDraw);
 
   Character = (function() {
-    function Character(universe) {
-      var bodyDef, fixDef;
+    Character.prototype.MAX_VEL = 15;
+
+    function Character(universe, init_pos) {
+      var bodyDef, box, circle;
 
       this.universe = universe;
       this.stand = PIXI.Sprite.fromFrame("jackie_stand_01");
       this.stand.anchor.x = .5;
       this.stand.anchor.y = .5;
-      this.universe.game.stage.addChild(this.stand);
+      this.universe.game.stage.addChildAt(this.stand, 0);
       bodyDef = new b2Dynamics.b2BodyDef();
       bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
-      bodyDef.position.x = -8;
-      bodyDef.position.y = -10;
-      fixDef = new b2Dynamics.b2FixtureDef();
-      fixDef.density = 1.0;
-      fixDef.friction = 0.5;
-      fixDef.restitution = 0.2;
-      fixDef.shape = new b2Shapes.b2PolygonShape();
-      fixDef.shape.SetAsBox(.7, .8);
-      this.body = this.universe._world.CreateBody(bodyDef);
-      this.body.CreateFixture(fixDef);
+      this.body = this.universe.world.CreateBody(bodyDef);
+      this._w = .4;
+      this._h = .5;
+      circle = new b2Shapes.b2CircleShape(this._w);
+      circle.SetLocalPosition(new b2Vec2(0, this._h));
+      this.body_circle = this.body.CreateFixture2(circle, 0);
+      this.body_circle.SetRestitution(0);
+      box = new b2Shapes.b2PolygonShape();
+      box.SetAsBox(this._w, this._h);
+      this.body_box = this.body.CreateFixture2(box, 5);
+      this.body.SetBullet(true);
+      this.body.SetFixedRotation(true);
+      this.body.SetPosition(init_pos);
+      this._move_direction = new b2Vec2(0, 0);
+      this._directions = {
+        left: false,
+        right: false,
+        up: false,
+        down: false
+      };
+      this._jumping = false;
     }
 
     Character.prototype.update = function() {
+      var force, imp, pos, vel;
+
+      vel = this.body.GetLinearVelocity();
+      pos = this.body.GetPosition();
+      force = this._move_direction.Copy();
+      force.Multiply(500);
+      this.body.ApplyForce(force, pos);
+      if (this._jumping && this.onGround()) {
+        imp = new b2Vec2(0, -25);
+        this.body.ApplyImpulse(imp, pos);
+      }
+      if (Math.abs(vel.x) > this.MAX_VEL) {
+        vel.x = (vel.x > 0 ? 1 : -1) * this.MAX_VEL;
+        this.body.SetLinearVelocity(vel);
+      }
+      return this.body.SetAwake(true);
+    };
+
+    Character.prototype.onGround = function() {
+      var a, b, below, contact, manifold, p, pos, _i, _len, _ref;
+
+      contact = this.universe.world.GetContactList();
+      while (contact) {
+        a = contact.GetFixtureA();
+        b = contact.GetFixtureB();
+        if (contact.IsTouching() && (a === this.body_circle || b === this.body_circle)) {
+          pos = this.body.GetPosition();
+          manifold = new b2Collision.b2WorldManifold();
+          contact.GetWorldManifold(manifold);
+          below = true;
+          _ref = manifold.m_points;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            p = _ref[_i];
+            below &= p.y > (pos.y + this._h + .1);
+          }
+          return below;
+        }
+        contact = contact.GetNext();
+      }
+      return false;
+    };
+
+    Character.prototype.startJump = function() {
+      return this._jumping = true;
+    };
+
+    Character.prototype.endJump = function() {
+      return this._jumping = false;
+    };
+
+    Character.prototype.startMoveRight = function() {
+      this._directions.right = true;
+      return this._move_direction.x = 1;
+    };
+
+    Character.prototype.endMoveRight = function() {
+      this._directions.right = false;
+      if (this._directions.left) {
+        return this._move_direction.x = -1;
+      } else {
+        this._move_direction.x = 0;
+        return this._stopMoveX();
+      }
+    };
+
+    Character.prototype.startMoveLeft = function() {
+      this._directions.left = true;
+      return this._move_direction.x = -1;
+    };
+
+    Character.prototype.endMoveLeft = function() {
+      this._directions.left = false;
+      this._move_direction.x = (this._directions.right ? 1 : 0);
+      if (this._directions.right) {
+        return this._move_direction.x = 1;
+      } else {
+        this._move_direction.x = 0;
+        return this._stopMoveX();
+      }
+    };
+
+    Character.prototype._stopMoveX = function() {
+      var vel;
+
+      vel = this.body.GetLinearVelocity();
+      vel.x = 0;
+      return this.body.SetLinearVelocity(vel);
+    };
+
+    Character.prototype.draw = function() {
       var pos;
 
       pos = this.body.GetPosition();
       pos = {
         x: pos.x * settings.PPM,
-        y: pos.y * settings.PPM
+        y: (pos.y + .1) * settings.PPM
       };
       pos = this.universe.game.camera.worldToScreen(pos);
       this.stand.position.x = pos.x;
       return this.stand.position.y = pos.y;
     };
 
-    Character.prototype.draw = function() {};
-
     return Character;
 
   })();
 
   Universe = (function() {
-    Universe.prototype._planets = [];
+    Universe.prototype.planets = [];
 
-    Universe.prototype._characters = [];
+    Universe.prototype.characters = [];
 
-    Universe.prototype._world = null;
-
-    Universe.prototype._debug_draw = settings.DEBUG;
+    Universe.prototype._debug_draw = false;
 
     Universe.prototype._debug_drawer = null;
 
-    Universe.prototype.controlled_char = null;
-
     function Universe(game, graphics, camera) {
-      var bodyDef, character, doSleep, fixDef, gravity;
+      var bodyDef, doSleep, fixDef, gravity;
 
       this.game = game;
       this.graphics = graphics;
       this.camera = camera;
-      gravity = new b2Vec2(0, 10);
-      this._world = new b2Dynamics.b2World(gravity, doSleep = true);
+      gravity = new b2Vec2(0, 20);
+      this.world = new b2Dynamics.b2World(gravity, doSleep = true);
       this._debug_drawer = new DebugDraw(this.camera);
       this._debug_drawer.SetSprite(this.graphics);
-      this._debug_drawer.SetDrawScale(settings.PPM);
+      this._debug_drawer.SetDrawScale(1);
       this._debug_drawer.SetFillAlpha(0.3);
       this._debug_drawer.SetLineThickness(1.0);
       this._debug_drawer.SetFlags(b2Dynamics.b2DebugDraw.e_shapeBit | b2Dynamics.b2DebugDraw.e_jointBit);
-      this._world.SetDebugDraw(this._debug_drawer);
+      this.world.SetDebugDraw(this._debug_drawer);
       this._terrain = [];
       this._createTerrain();
       this._updateTerrainBody();
@@ -240,39 +321,49 @@
       fixDef.friction = 0.5;
       fixDef.restitution = 0.2;
       fixDef.shape = new b2Shapes.b2CircleShape(1);
-      this._world.CreateBody(bodyDef).CreateFixture(fixDef);
-      character = new Character(this);
-      this._characters.push(character);
-      this.controlled_char = character;
+      this.world.CreateBody(bodyDef).CreateFixture(fixDef);
     }
 
     Universe.prototype.update = function() {
       var c, _i, _len, _ref;
 
-      _ref = this._characters;
+      _ref = this.characters;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         c = _ref[_i];
         c.update();
       }
-      this._world.Step(settings.BOX2D_TIME_STEP, settings.BOX2D_VI, settings.BOX2D_PI);
-      return this._world.ClearForces();
+      this.world.Step(settings.BOX2D_TIME_STEP, settings.BOX2D_VI, settings.BOX2D_PI);
+      return this.world.ClearForces();
     };
 
     Universe.prototype.draw = function() {
       var c, _i, _len, _ref;
 
-      _ref = this._characters;
+      _ref = this.characters;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         c = _ref[_i];
         c.draw();
       }
       if (this._debug_draw) {
-        return this._world.DrawDebugData();
+        return this.world.DrawDebugData();
       }
     };
 
     Universe.prototype.toggleDebugDraw = function() {
       return this._debug_draw = !this._debug_draw;
+    };
+
+    Universe.prototype.newCharacter = function(options) {
+      var character, pos, _ref;
+
+      options = options != null ? options : {};
+      options.pos = (_ref = options.pos) != null ? _ref : {
+        x: 0,
+        y: 0
+      };
+      pos = new b2Vec2(options.pos.x, options.pos.y);
+      character = new Character(this, pos);
+      return this.characters.push(character);
     };
 
     Universe.prototype._createTerrain = function() {
@@ -304,11 +395,11 @@
     Universe.prototype._updateTerrainBody = function() {
       var body, bodyDef, data, fixDef, poly, shape, v, _i, _j, _len, _len1, _ref, _results;
 
-      body = this._world.GetBodyList();
+      body = this.world.GetBodyList();
       while (body) {
         data = body.GetUserData();
         if (data && data === "Terrain") {
-          this._world.DestroyBody(body);
+          this.world.DestroyBody(body);
         }
         body = body.GetNext();
       }
@@ -318,7 +409,7 @@
       fixDef = new b2Dynamics.b2FixtureDef();
       fixDef.density = 1.0;
       fixDef.friction = 0.5;
-      fixDef.restitution = 0.2;
+      fixDef.restitution = 0;
       _ref = this._terrain;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -330,7 +421,7 @@
           shape.push(new b2Vec2(v.x, v.y));
         }
         fixDef.shape.SetAsArray(shape, shape.length);
-        _results.push(this._world.CreateBody(bodyDef).CreateFixture(fixDef));
+        _results.push(this.world.CreateBody(bodyDef).CreateFixture(fixDef));
       }
       return _results;
     };
@@ -350,16 +441,20 @@
 
     Camera.prototype.worldToScreen = function(point) {
       return {
-        x: point.x - this.x + this.w / 2,
-        y: point.y - this.y + this.h / 2
+        x: (point.x - this.x) * settings.PPM + this.w / 2,
+        y: (point.y - this.y) * settings.PPM + this.h / 2
       };
     };
 
     Camera.prototype.screenToWorld = function(point) {
       return {
-        x: point.x + this.x - this.w / 2,
-        y: point.y + this.y - this.h / 2
+        x: (point.x - this.w / 2) / settings.PPM + this.x,
+        y: (point.y - this.h / 2) / settings.PPM + this.y
       };
+    };
+
+    Camera.prototype.copy = function() {
+      return new Camera(this.x, this.y, this.w, this.h, this.zoom);
     };
 
     return Camera;
@@ -380,6 +475,10 @@
 
     Game.prototype._mouse_down = false;
 
+    Game.prototype._controlled_char = null;
+
+    Game.prototype._char_options = {};
+
     function Game(stage, graphics) {
       var style;
 
@@ -387,6 +486,16 @@
       this.graphics = graphics;
       this.camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT);
       this._universe = new Universe(this, this.graphics, this.camera);
+      this._char_options = {
+        pos: {
+          x: -8,
+          y: -10
+        }
+      };
+      this._universe.newCharacter(this._char_options);
+      this._char_options.pos.x = 8;
+      this._universe.newCharacter(this._char_options);
+      this._controlled_char = this._universe.characters[1];
       style = {
         font: "15px Arial",
         fill: "#FFFFFF"
@@ -395,8 +504,15 @@
       this._dev_text.position.x = 10;
       this._dev_text.position.y = 5;
       this._dev_text.renderable = false;
-      this.stage.addChild(this._dev_text);
+      this._gui = null;
+      if (settings.DEBUG) {
+        this.toggleDevMode();
+      }
     }
+
+    Game.prototype.newCharacter = function() {
+      return this._universe.newCharacter(this._char_options);
+    };
 
     Game.prototype.update = function() {
       return this._universe.update();
@@ -408,9 +524,16 @@
 
     Game.prototype.toggleDevMode = function() {
       if (this._dev_mode) {
-        this.stage.addChild(this._dev_text);
-      } else {
         this.stage.removeChild(this._dev_text);
+        this._gui.destroy();
+      } else {
+        this.stage.addChild(this._dev_text);
+        this._gui = new dat.GUI();
+        this._gui.add(this, 'toggleDevMode');
+        this._gui.add(this, 'toggleDebugDraw');
+        this._gui.add(this, 'newCharacter');
+        this._gui.add(this._char_options.pos, 'x').listen();
+        this._gui.add(this._char_options.pos, 'y').listen();
       }
       return this._dev_mode = !this._dev_mode;
     };
@@ -420,21 +543,32 @@
     };
 
     Game.prototype.onKeyDown = function(key_code) {
-      var loc;
-
       if (key_code === 65) {
-        loc = this._universe.controlled_char.body.GetPosition();
-        return this._universe.controlled_char.body.ApplyForce(new b2Vec2(-100, 0), loc);
+        return this._controlled_char.startMoveLeft();
       } else if (key_code === 68) {
-        loc = this._universe.controlled_char.body.GetPosition();
-        return this._universe.controlled_char.body.ApplyForce(new b2Vec2(100, 0), loc);
+        return this._controlled_char.startMoveRight();
+      } else if (key_code === 87) {
+        return this._controlled_char.startJump();
       }
     };
 
-    Game.prototype.onKeyUp = function(key_code) {};
+    Game.prototype.onKeyUp = function(key_code) {
+      if (key_code === 65) {
+        return this._controlled_char.endMoveLeft();
+      } else if (key_code === 68) {
+        return this._controlled_char.endMoveRight();
+      } else if (key_code === 87) {
+        return this._controlled_char.endJump();
+      }
+    };
 
     Game.prototype.onMouseDown = function(screen_pos) {
-      return this._mouse_down = true;
+      var p;
+
+      this._mouse_down = true;
+      p = this.camera.screenToWorld(screen_pos);
+      this._char_options.pos.x = p.x;
+      return this._char_options.pos.y = p.y;
     };
 
     Game.prototype.onMouseUp = function(screen_pos) {
@@ -442,15 +576,19 @@
     };
 
     Game.prototype.onMouseMove = function(screen_pos) {
-      var dx, dy;
+      var dp, s;
 
-      if (this._mouse_down) {
-        dx = screen_pos.x - this._last_mouse_pos.x;
-        dy = screen_pos.y - this._last_mouse_pos.y;
-        this.camera.x -= dx;
-        this.camera.y -= dy;
+      s = this.camera.screenToWorld(screen_pos);
+      if (this._mouse_down && this._dev_mode) {
+        dp = {
+          x: screen_pos.x - this._last_mouse_pos.x,
+          y: screen_pos.y - this._last_mouse_pos.y
+        };
+        dp = this.camera.screenToWorld(dp);
+        this.camera.x -= dp.x;
+        this.camera.y -= dp.y;
       }
-      return this._last_mouse_pos = screen_pos;
+      return this._last_mouse_pos = this.camera.worldToScreen(s);
     };
 
     Game.prototype.onMouseWheel = function(delta) {};
@@ -476,7 +614,7 @@
   stance = null;
 
   main = function() {
-    var black, blurHandler, body, canvas, clear, clickHandler, container, draw, event_catcher, focusHandler, game, graphics, keyDownListener, main_loop, mouseDownHandler, mouseMoveHandler, mouseOutHandler, mouseUpHandler, mouseWheelHandler, onBeforeUnload, onResize, queue, renderer, stage, t, update;
+    var black, blurHandler, body, canvas, clear, clickHandler, container, draw, event_catcher, focusHandler, game, graphics, keyDownListener, keyUpListener, main_loop, mouseDownHandler, mouseMoveHandler, mouseOutHandler, mouseUpHandler, mouseWheelHandler, onBeforeUnload, onResize, queue, renderer, stage, t, update;
 
     W = settings.FULL_SCREEN ? window.innerWidth : settings.WIDTH;
     H = settings.FULL_SCREEN ? window.innerHeight : settings.HEIGHT;
@@ -501,9 +639,12 @@
       console.log("key down:", e.keyCode);
       if (e.keyCode === 192) {
         game.toggleDevMode();
-        game.toggleDebugDraw();
       }
       return game.onKeyDown(e.keyCode);
+    };
+    keyUpListener = function(e) {
+      console.log("key up:", e.keyCode);
+      return game.onKeyUp(e.keyCode);
     };
     onBeforeUnload = function(e) {
       return console.log("leaving");
@@ -511,8 +652,8 @@
     mouseMoveHandler = function(e) {
       var x, y;
 
-      x = e.clientX;
-      y = e.clientY;
+      x = e.layerX;
+      y = e.layerY;
       console.log("mouse:", x, y);
       return game.onMouseMove({
         x: x,
@@ -522,16 +663,16 @@
     clickHandler = function(e) {
       var x, y;
 
-      x = e.clientX;
-      y = e.clientY;
+      x = e.layerX;
+      y = e.layerY;
       return console.log("click:", x, y);
     };
     mouseDownHandler = function(e) {
       var x, y;
 
       console.log("mouse down");
-      x = e.clientX;
-      y = e.clientY;
+      x = e.layerX;
+      y = e.layerY;
       return game.onMouseDown({
         x: x,
         y: y
@@ -541,8 +682,8 @@
       var x, y;
 
       console.log("mouse up");
-      x = e.clientX;
-      y = e.clientY;
+      x = e.layerX;
+      y = e.layerY;
       return game.onMouseUp({
         x: x,
         y: y
@@ -566,6 +707,7 @@
     event_catcher = canvas;
     window.onresize = onResize;
     document.body.addEventListener('keydown', keyDownListener, false);
+    document.body.addEventListener('keyup', keyUpListener, false);
     window.onbeforeunload = onBeforeUnload;
     event_catcher.addEventListener('mousemove', mouseMoveHandler, false);
     event_catcher.addEventListener('click', clickHandler, false);

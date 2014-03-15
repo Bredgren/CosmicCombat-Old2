@@ -5,26 +5,24 @@
 #_require ./character/character
 
 class Universe
-  _planets: []
-  _characters: []
-  _world: null
-  _debug_draw: settings.DEBUG
+  planets: []
+  characters: []
+  _debug_draw: false
   _debug_drawer: null
 
-  controlled_char: null
-
   constructor: (@game, @graphics, @camera) ->
-    gravity = new b2Vec2(0, 10)
-    @_world = new b2Dynamics.b2World(gravity, doSleep=true)
+    gravity = new b2Vec2(0, 20)
+    @world = new b2Dynamics.b2World(gravity, doSleep=true)
 
     @_debug_drawer = new DebugDraw(@camera)
     @_debug_drawer.SetSprite(@graphics)
-    @_debug_drawer.SetDrawScale(settings.PPM)
+    # @_debug_drawer.SetDrawScale(settings.PPM)
+    @_debug_drawer.SetDrawScale(1)
     @_debug_drawer.SetFillAlpha(0.3)
     @_debug_drawer.SetLineThickness(1.0)
     @_debug_drawer.SetFlags(b2Dynamics.b2DebugDraw.e_shapeBit |
       b2Dynamics.b2DebugDraw.e_jointBit)
-    @_world.SetDebugDraw(@_debug_drawer)
+    @world.SetDebugDraw(@_debug_drawer)
 
     @_terrain = []
     @_createTerrain()
@@ -41,24 +39,31 @@ class Universe
     fixDef.restitution = 0.2
     fixDef.shape = new b2Shapes.b2CircleShape(1)
 
-    @_world.CreateBody(bodyDef).CreateFixture(fixDef)
-
-    character = new Character(@)
-    @_characters.push(character)
-    @controlled_char = character
+    @world.CreateBody(bodyDef).CreateFixture(fixDef)
 
   update: () ->
-    c.update() for c in @_characters
-    @_world.Step(settings.BOX2D_TIME_STEP, settings.BOX2D_VI, settings.BOX2D_PI)
-    @_world.ClearForces()
+    c.update() for c in @characters
+    @world.Step(settings.BOX2D_TIME_STEP, settings.BOX2D_VI, settings.BOX2D_PI)
+    @world.ClearForces()
 
   draw: () ->
-    c.draw() for c in @_characters
+    c.draw() for c in @characters
     if @_debug_draw
-      @_world.DrawDebugData()
+      @world.DrawDebugData()
 
   toggleDebugDraw: () ->
     @_debug_draw = not @_debug_draw
+
+  # Creates a new character
+  # options [Object]:
+  #   pos: {x, y} - default = {x: 0, y: 0}
+  #
+  newCharacter: (options) ->
+    options = options ? {}
+    options.pos = options.pos ? {x: 0, y: 0}
+    pos = new b2Vec2(options.pos.x, options.pos.y)
+    character = new Character(@, pos)
+    @characters.push(character)
 
   _createTerrain: () ->
     w = 20 / 2
@@ -70,11 +75,11 @@ class Universe
 
   _updateTerrainBody: () ->
     # Remove current body
-    body = @_world.GetBodyList()
+    body = @world.GetBodyList()
     while body
       data = body.GetUserData()
       if data and data == "Terrain"
-        @_world.DestroyBody(body)
+        @world.DestroyBody(body)
       body = body.GetNext()
 
     # Add body to match current _terrain
@@ -85,11 +90,11 @@ class Universe
     fixDef = new b2Dynamics.b2FixtureDef()
     fixDef.density = 1.0
     fixDef.friction = 0.5
-    fixDef.restitution = 0.2
+    fixDef.restitution = 0 #0.2
     for poly in @_terrain
       fixDef.shape = new b2Shapes.b2PolygonShape()
       shape = []
       for v in poly
         shape.push(new b2Vec2(v.x, v.y))
       fixDef.shape.SetAsArray(shape, shape.length)
-      @_world.CreateBody(bodyDef).CreateFixture(fixDef)
+      @world.CreateBody(bodyDef).CreateFixture(fixDef)
