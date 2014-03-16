@@ -54,16 +54,19 @@ class Universe
   toggleDebugDraw: () ->
     @_debug_draw = not @_debug_draw
 
-  # Creates a new character
+  # Creates a new Character
   # options [Object]:
   #   pos: {x, y} - default = {x: 0, y: 0}
+  #   type: String - ...
   #
+  # returns the new Character
   newCharacter: (options) ->
     options = options ? {}
     options.pos = options.pos ? {x: 0, y: 0}
     pos = new b2Vec2(options.pos.x, options.pos.y)
     character = new Character(@, pos)
     @characters.push(character)
+    return character
 
   _createTerrain: () ->
     w = 20 / 2

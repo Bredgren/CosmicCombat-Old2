@@ -1,6 +1,7 @@
 
 settings = {
   DEBUG: true
+  PRINT_INPUT: false
   FULL_SCREEN: false
   WIDTH: 900
   HEIGHT: 600

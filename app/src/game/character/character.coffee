@@ -59,6 +59,20 @@ class Character
 
     @body.SetAwake(true)
 
+  draw: () ->
+    pos = @body.GetPosition()
+    # + .1 to place on ground
+    pos = {x: pos.x, y: (pos.y+.1)}
+    pos = @universe.game.camera.worldToScreen(pos)
+    @stand.position.x = pos.x
+    @stand.position.y = pos.y
+
+  position: () ->
+    return @body.GetPosition()
+
+  size: () ->
+    return {w: @stand.width, h: @stand.height}
+
   onGround: () ->
     contact = @universe.world.GetContactList()
     while contact
@@ -111,11 +125,3 @@ class Character
     vel = @body.GetLinearVelocity()
     vel.x = 0
     @body.SetLinearVelocity(vel)
-
-  draw: () ->
-    pos = @body.GetPosition()
-    # + .1 to place on ground
-    pos = {x: pos.x* settings.PPM, y: (pos.y+.1) * settings.PPM}
-    pos = @universe.game.camera.worldToScreen(pos)
-    @stand.position.x = pos.x
-    @stand.position.y = pos.y

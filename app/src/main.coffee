@@ -209,10 +209,10 @@ main = ->
   # Set event handlers
 
   onResize = ->
-    console.log("resize")
+    log_input("resize")
 
   keyDownListener = (e) ->
-    console.log("key down:", e.keyCode)
+    log_input("key down:", e.keyCode)
     if e.keyCode == 192
       game.toggleDevMode()
     # else if e.keyCode == 32
@@ -221,12 +221,12 @@ main = ->
     game.onKeyDown(e.keyCode)
 
   keyUpListener = (e) ->
-    console.log("key up:", e.keyCode)
+    log_input("key up:", e.keyCode)
     game.onKeyUp(e.keyCode)
 
   # Catch accidental leaving
   onBeforeUnload = (e) ->
-    console.log("leaving")
+    log_input("leaving")
 
     # if (not e)
     #   e = window.event
@@ -240,38 +240,38 @@ main = ->
   mouseMoveHandler = (e) ->
     x = e.layerX
     y = e.layerY
-    console.log("mouse:", x, y)
+    log_input("mouse:", x, y)
     game.onMouseMove({x: x, y: y})
 
   clickHandler = (e) ->
     x = e.layerX
     y = e.layerY
-    console.log("click:", x, y)
+    log_input("click:", x, y)
 
   mouseDownHandler = (e) ->
-    console.log("mouse down")
+    log_input("mouse down")
     x = e.layerX
     y = e.layerY
     game.onMouseDown({x: x, y: y})
 
   mouseUpHandler = (e) ->
-    console.log("mouse up")
+    log_input("mouse up")
     x = e.layerX
     y = e.layerY
     game.onMouseUp({x: x, y: y})
 
   mouseOutHandler = (e) ->
-    console.log("mouse out")
+    log_input("mouse out")
 
   mouseWheelHandler = (e) ->
     delta = Math.max(-1, Math.min(1, (e.wheelDelta or -e.detail)))
-    console.log("mouse wheel: ", delta)
+    log_input("mouse wheel: ", delta)
 
   focusHandler = (e) ->
-    console.log("focus")
+    log_input("focus")
 
   blurHandler = (e) ->
-    console.log("blur")
+    log_input("blur")
 
   event_catcher = canvas
 
@@ -352,3 +352,7 @@ main = ->
     main_loop()
 
   main_loop()
+
+log_input = (args...) ->
+  if settings.PRINT_INPUT
+    console.log(args...)
