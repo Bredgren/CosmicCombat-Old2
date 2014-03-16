@@ -6,11 +6,15 @@ class Character
   MAX_VEL: 15
 
   # init_pos [b2Vec2]
-  constructor: (@universe, init_pos) ->
+  constructor: (@universe, init_pos, click_callback) ->
     @stand = PIXI.Sprite.fromFrame("jackie_stand_01")
     @stand.anchor.x = .5
     @stand.anchor.y = .5
     @universe.game.stage.addChildAt(@stand, 0)
+
+    @stand.setInteractive(true)
+    @stand.click = (mousedata) =>
+      click_callback(@, mousedata)
 
     bodyDef = new b2Dynamics.b2BodyDef()
     bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody

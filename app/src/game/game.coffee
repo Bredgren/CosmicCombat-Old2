@@ -82,18 +82,15 @@ class Game
   draw: () ->
     @_universe.draw()
 
+  _onCharacterClick: (character, mousedata) =>
+    if @_dev.enabled
+      @_selectCharacter(character)
+
   spawnCharacter: () ->
-    @_dev.selected_char = @_universe.newCharacter(@_dev.new_char_options)
+    c = @_universe.newCharacter(@_dev.new_char_options, @_onCharacterClick)
 
     # Auto select newly created character
-    if @_dev.cur_char_gui.folder
-      @_dev.cur_char_gui.folder.remove(@_dev.cur_char_gui.pos.x)
-      @_dev.cur_char_gui.folder.remove(@_dev.cur_char_gui.pos.y)
-      pos = @_dev.selected_char.position()
-      @_dev.cur_char_gui.pos.x =
-        @_dev.cur_char_gui.folder.add(pos, 'x').listen()
-      @_dev.cur_char_gui.pos.y =
-        @_dev.cur_char_gui.folder.add(pos, 'y').listen()
+    @_selectCharacter(c)
 
   toggleDevMode: () ->
     if @_dev.enabled
@@ -168,10 +165,21 @@ class Game
   onMouseWheel: (delta) ->
 
   # Transfers user control to the selected character
-  controlCharacter: () ->
+  takeControl: () ->
     if @_dev.selected_char
       @_controlled_char = @_dev.selected_char
       @_createGuiControlledChar(@_dev.char_gui.folder)
+
+  _selectCharacter: (character) ->
+    @_dev.selected_char = character
+    if @_dev.cur_char_gui.folder
+      @_dev.cur_char_gui.folder.remove(@_dev.cur_char_gui.pos.x)
+      @_dev.cur_char_gui.folder.remove(@_dev.cur_char_gui.pos.y)
+      pos = @_dev.selected_char.position()
+      @_dev.cur_char_gui.pos.x =
+        @_dev.cur_char_gui.folder.add(pos, 'x').listen()
+      @_dev.cur_char_gui.pos.y =
+        @_dev.cur_char_gui.folder.add(pos, 'y').listen()
 
   _changeNewChar: (value) =>
     if value
@@ -244,7 +252,7 @@ class Game
   _createGuiSelectedChar: (parent) ->
     f = parent.addFolder('Selected Character')
     @_dev.cur_char_gui.folder = f
-    @_dev.cur_char_gui.control = f.add(@, 'controlCharacter').listen()
+    @_dev.cur_char_gui.control = f.add(@, 'takeControl').listen()
     pos = @_dev.selected_char.position()
     @_dev.cur_char_gui.pos.x = f.add(pos, 'x').listen()
     @_dev.cur_char_gui.pos.y = f.add(pos, 'y').listen()

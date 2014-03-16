@@ -148,14 +148,19 @@
   Character = (function() {
     Character.prototype.MAX_VEL = 15;
 
-    function Character(universe, init_pos) {
-      var bodyDef, box, circle;
+    function Character(universe, init_pos, click_callback) {
+      var bodyDef, box, circle,
+        _this = this;
 
       this.universe = universe;
       this.stand = PIXI.Sprite.fromFrame("jackie_stand_01");
       this.stand.anchor.x = .5;
       this.stand.anchor.y = .5;
       this.universe.game.stage.addChildAt(this.stand, 0);
+      this.stand.setInteractive(true);
+      this.stand.click = function(mousedata) {
+        return click_callback(_this, mousedata);
+      };
       bodyDef = new b2Dynamics.b2BodyDef();
       bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
       this.body = this.universe.world.CreateBody(bodyDef);
@@ -367,7 +372,7 @@
       return this._debug_draw = !this._debug_draw;
     };
 
-    Universe.prototype.newCharacter = function(options) {
+    Universe.prototype.newCharacter = function(options, click_callback) {
       var character, pos, _ref;
 
       options = options != null ? options : {};
@@ -376,7 +381,7 @@
         y: 0
       };
       pos = new b2Vec2(options.pos.x, options.pos.y);
-      character = new Character(this, pos);
+      character = new Character(this, pos, click_callback);
       this.characters.push(character);
       return character;
     };
@@ -529,6 +534,7 @@
       this.stage = stage;
       this.graphics = graphics;
       this._changeNewChar = __bind(this._changeNewChar, this);
+      this._onCharacterClick = __bind(this._onCharacterClick, this);
       this.camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT);
       this._universe = new Universe(this, this.graphics, this.camera);
       this._resetGui();
@@ -595,17 +601,17 @@
       return this._universe.draw();
     };
 
-    Game.prototype.spawnCharacter = function() {
-      var pos;
-
-      this._dev.selected_char = this._universe.newCharacter(this._dev.new_char_options);
-      if (this._dev.cur_char_gui.folder) {
-        this._dev.cur_char_gui.folder.remove(this._dev.cur_char_gui.pos.x);
-        this._dev.cur_char_gui.folder.remove(this._dev.cur_char_gui.pos.y);
-        pos = this._dev.selected_char.position();
-        this._dev.cur_char_gui.pos.x = this._dev.cur_char_gui.folder.add(pos, 'x').listen();
-        return this._dev.cur_char_gui.pos.y = this._dev.cur_char_gui.folder.add(pos, 'y').listen();
+    Game.prototype._onCharacterClick = function(character, mousedata) {
+      if (this._dev.enabled) {
+        return this._selectCharacter(character);
       }
+    };
+
+    Game.prototype.spawnCharacter = function() {
+      var c;
+
+      c = this._universe.newCharacter(this._dev.new_char_options, this._onCharacterClick);
+      return this._selectCharacter(c);
     };
 
     Game.prototype.toggleDevMode = function() {
@@ -695,10 +701,23 @@
 
     Game.prototype.onMouseWheel = function(delta) {};
 
-    Game.prototype.controlCharacter = function() {
+    Game.prototype.takeControl = function() {
       if (this._dev.selected_char) {
         this._controlled_char = this._dev.selected_char;
         return this._createGuiControlledChar(this._dev.char_gui.folder);
+      }
+    };
+
+    Game.prototype._selectCharacter = function(character) {
+      var pos;
+
+      this._dev.selected_char = character;
+      if (this._dev.cur_char_gui.folder) {
+        this._dev.cur_char_gui.folder.remove(this._dev.cur_char_gui.pos.x);
+        this._dev.cur_char_gui.folder.remove(this._dev.cur_char_gui.pos.y);
+        pos = this._dev.selected_char.position();
+        this._dev.cur_char_gui.pos.x = this._dev.cur_char_gui.folder.add(pos, 'x').listen();
+        return this._dev.cur_char_gui.pos.y = this._dev.cur_char_gui.folder.add(pos, 'y').listen();
       }
     };
 
@@ -795,7 +814,7 @@
 
       f = parent.addFolder('Selected Character');
       this._dev.cur_char_gui.folder = f;
-      this._dev.cur_char_gui.control = f.add(this, 'controlCharacter').listen();
+      this._dev.cur_char_gui.control = f.add(this, 'takeControl').listen();
       pos = this._dev.selected_char.position();
       this._dev.cur_char_gui.pos.x = f.add(pos, 'x').listen();
       return this._dev.cur_char_gui.pos.y = f.add(pos, 'y').listen();

@@ -59,12 +59,13 @@ class Universe
   #   pos: {x, y} - default = {x: 0, y: 0}
   #   type: String - ...
   #
+  # click_callback = (Character, mousedata) ->
   # returns the new Character
-  newCharacter: (options) ->
+  newCharacter: (options, click_callback) ->
     options = options ? {}
     options.pos = options.pos ? {x: 0, y: 0}
     pos = new b2Vec2(options.pos.x, options.pos.y)
-    character = new Character(@, pos)
+    character = new Character(@, pos, click_callback)
     @characters.push(character)
     return character
 
