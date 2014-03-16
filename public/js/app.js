@@ -610,8 +610,7 @@
     Game.prototype.spawnCharacter = function() {
       var c;
 
-      c = this._universe.newCharacter(this._dev.new_char_options, this._onCharacterClick);
-      return this._selectCharacter(c);
+      return c = this._universe.newCharacter(this._dev.new_char_options, this._onCharacterClick);
     };
 
     Game.prototype.toggleDevMode = function() {
@@ -712,13 +711,13 @@
       var pos;
 
       this._dev.selected_char = character;
-      if (this._dev.cur_char_gui.folder) {
+      if (this._dev.cur_char_gui.folder && this._dev.cur_char_gui.pos.x) {
         this._dev.cur_char_gui.folder.remove(this._dev.cur_char_gui.pos.x);
         this._dev.cur_char_gui.folder.remove(this._dev.cur_char_gui.pos.y);
-        pos = this._dev.selected_char.position();
-        this._dev.cur_char_gui.pos.x = this._dev.cur_char_gui.folder.add(pos, 'x').listen();
-        return this._dev.cur_char_gui.pos.y = this._dev.cur_char_gui.folder.add(pos, 'y').listen();
       }
+      pos = this._dev.selected_char.position();
+      this._dev.cur_char_gui.pos.x = this._dev.cur_char_gui.folder.add(pos, 'x').listen();
+      return this._dev.cur_char_gui.pos.y = this._dev.cur_char_gui.folder.add(pos, 'y').listen();
     };
 
     Game.prototype._changeNewChar = function(value) {
@@ -815,9 +814,11 @@
       f = parent.addFolder('Selected Character');
       this._dev.cur_char_gui.folder = f;
       this._dev.cur_char_gui.control = f.add(this, 'takeControl').listen();
-      pos = this._dev.selected_char.position();
-      this._dev.cur_char_gui.pos.x = f.add(pos, 'x').listen();
-      return this._dev.cur_char_gui.pos.y = f.add(pos, 'y').listen();
+      if (this._dev.selected_char) {
+        pos = this._dev.selected_char.position();
+        this._dev.cur_char_gui.pos.x = f.add(pos, 'x').listen();
+        return this._dev.cur_char_gui.pos.y = f.add(pos, 'y').listen();
+      }
     };
 
     Game.prototype._createGuiControlledChar = function(parent) {

@@ -89,9 +89,6 @@ class Game
   spawnCharacter: () ->
     c = @_universe.newCharacter(@_dev.new_char_options, @_onCharacterClick)
 
-    # Auto select newly created character
-    @_selectCharacter(c)
-
   toggleDevMode: () ->
     if @_dev.enabled
       @stage.removeChild(@_dev.text)
@@ -172,14 +169,14 @@ class Game
 
   _selectCharacter: (character) ->
     @_dev.selected_char = character
-    if @_dev.cur_char_gui.folder
+    if @_dev.cur_char_gui.folder and @_dev.cur_char_gui.pos.x
       @_dev.cur_char_gui.folder.remove(@_dev.cur_char_gui.pos.x)
       @_dev.cur_char_gui.folder.remove(@_dev.cur_char_gui.pos.y)
-      pos = @_dev.selected_char.position()
-      @_dev.cur_char_gui.pos.x =
-        @_dev.cur_char_gui.folder.add(pos, 'x').listen()
-      @_dev.cur_char_gui.pos.y =
-        @_dev.cur_char_gui.folder.add(pos, 'y').listen()
+    pos = @_dev.selected_char.position()
+    @_dev.cur_char_gui.pos.x =
+      @_dev.cur_char_gui.folder.add(pos, 'x').listen()
+    @_dev.cur_char_gui.pos.y =
+      @_dev.cur_char_gui.folder.add(pos, 'y').listen()
 
   _changeNewChar: (value) =>
     if value
@@ -253,9 +250,10 @@ class Game
     f = parent.addFolder('Selected Character')
     @_dev.cur_char_gui.folder = f
     @_dev.cur_char_gui.control = f.add(@, 'takeControl').listen()
-    pos = @_dev.selected_char.position()
-    @_dev.cur_char_gui.pos.x = f.add(pos, 'x').listen()
-    @_dev.cur_char_gui.pos.y = f.add(pos, 'y').listen()
+    if @_dev.selected_char
+      pos = @_dev.selected_char.position()
+      @_dev.cur_char_gui.pos.x = f.add(pos, 'x').listen()
+      @_dev.cur_char_gui.pos.y = f.add(pos, 'y').listen()
 
   _createGuiControlledChar: (parent) ->
     if @_dev.con_char_gui.folder
