@@ -4,10 +4,11 @@
 
 class BaseCharacter
   body: null
+
+  _w: 0
+  _h: 0
   _body_box: null
   _body_circle: null
-
-  MAX_VEL: 15
 
   _move_direction: null
   _directions:
@@ -16,53 +17,12 @@ class BaseCharacter
     up: false
     down: false
   _jumping: false
+  _jump_strength: 25
+  _max_vel: 15
 
   # init_pos [b2Vec2]
   constructor: (@universe, init_pos, type, click_callback) ->
     @_move_direction = new b2Vec2(0, 0)
-
-    # if type is settings.CHARACTERS.JACKIE
-    #   @stand = PIXI.Sprite.fromFrame("jackie_stand_01")
-    # else
-    #   @stand = PIXI.Sprite.fromFrame("goku_stand_01")
-
-    # stats = settings.CHAR_STATS[type]
-    # @_w = stats.w
-    # @_h = stats.h
-    # @_offset = stats.offset
-
-    # @stand.anchor.x = .5
-    # @stand.anchor.y = .5
-    # @universe.game.stage.addChildAt(@stand, 0)
-
-    # @stand.setInteractive(true)
-    # @stand.click = (mousedata) =>
-    #   click_callback(@, mousedata)
-
-    # bodyDef = new b2Dynamics.b2BodyDef()
-    # bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody
-    # @body = @universe.world.CreateBody(bodyDef)
-
-    # box = new b2Shapes.b2PolygonShape()
-    # box.SetAsBox(@_w, @_h)
-    # @body_box = @body.CreateFixture2(box, 5)
-
-    # circle = new b2Shapes.b2CircleShape(@_w)
-    # circle.SetLocalPosition(new b2Vec2(0, @_h))
-    # @body_circle = @body.CreateFixture2(circle, 0)
-    # @body_circle.SetRestitution(0)
-
-    # @body.SetBullet(true)
-    # @body.SetFixedRotation(true)
-    # @body.SetPosition(init_pos)
-
-    # @_move_direction = new b2Vec2(0, 0)
-    # @_directions =
-    #   left: false,
-    #   right:  false,
-    #   up: false,
-    #   down: false
-    # @_jumping = false
 
   update: () ->
     vel = @body.GetLinearVelocity()
@@ -73,27 +33,21 @@ class BaseCharacter
     @body.ApplyForce(force, pos)
 
     if @_jumping and @onGround()
-      imp = new b2Vec2(0, -25)
+      imp = new b2Vec2(0, -@_jump_strength)
       @body.ApplyImpulse(imp, pos)
 
-    if (Math.abs(vel.x) > @MAX_VEL)
-      vel.x = (if vel.x > 0 then 1 else -1) * @MAX_VEL
+    if (Math.abs(vel.x) > @_max_vel)
+      vel.x = (if vel.x > 0 then 1 else -1) * @_max_vel
       @body.SetLinearVelocity(vel)
 
     @body.SetAwake(true)
 
   draw: () ->
-    # pos = @body.GetPosition()
-    # pos = {x: pos.x, y: (pos.y + @_offset)}
-    # pos = @universe.game.camera.worldToScreen(pos)
-    # @stand.position.x = pos.x
-    # @stand.position.y = pos.y
 
   position: () ->
     return @body.GetPosition()
 
   size: () ->
-    # return {w: @stand.width, h: @stand.height}
 
   onGround: () ->
     contact = @universe.world.GetContactList()

@@ -173,11 +173,13 @@
   BaseCharacter = (function() {
     BaseCharacter.prototype.body = null;
 
+    BaseCharacter.prototype._w = 0;
+
+    BaseCharacter.prototype._h = 0;
+
     BaseCharacter.prototype._body_box = null;
 
     BaseCharacter.prototype._body_circle = null;
-
-    BaseCharacter.prototype.MAX_VEL = 15;
 
     BaseCharacter.prototype._move_direction = null;
 
@@ -189,6 +191,10 @@
     };
 
     BaseCharacter.prototype._jumping = false;
+
+    BaseCharacter.prototype._jump_strength = 25;
+
+    BaseCharacter.prototype._max_vel = 15;
 
     function BaseCharacter(universe, init_pos, type, click_callback) {
       this.universe = universe;
@@ -204,11 +210,11 @@
       force.Multiply(500);
       this.body.ApplyForce(force, pos);
       if (this._jumping && this.onGround()) {
-        imp = new b2Vec2(0, -25);
+        imp = new b2Vec2(0, -this._jump_strength);
         this.body.ApplyImpulse(imp, pos);
       }
-      if (Math.abs(vel.x) > this.MAX_VEL) {
-        vel.x = (vel.x > 0 ? 1 : -1) * this.MAX_VEL;
+      if (Math.abs(vel.x) > this._max_vel) {
+        vel.x = (vel.x > 0 ? 1 : -1) * this._max_vel;
         this.body.SetLinearVelocity(vel);
       }
       return this.body.SetAwake(true);
@@ -367,6 +373,7 @@
         _this = this;
 
       Goku.__super__.constructor.call(this, universe, init_pos, click_callback);
+      this._jump_strength = 15;
       this.stand = PIXI.Sprite.fromFrame("goku_stand_01");
       this.stand.anchor.x = .5;
       this.stand.anchor.y = .5;
