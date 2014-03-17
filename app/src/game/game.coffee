@@ -2,6 +2,7 @@
 #_require ../config
 #_require ./universe
 #_require ./camera
+#_require ./character/characters
 
 class Game
   camera: null
@@ -21,7 +22,7 @@ class Game
       pos:
         x: 0
         y: 0
-      type: settings.CHARACTERS.GOKU
+      type: Characters.GOKU
     new_char: false  # click creates a character when true
     new_text: null  # PIXI text object for new character
     select_text: null  # PIXI text object to show seleted character
@@ -47,7 +48,7 @@ class Game
       pos:
         x: -8
         y: -10
-      type: "Jackie"
+      type: Characters.JACKIE
     @spawnCharacter()
     @_controlled_char = @_universe.characters[0]
 
@@ -346,7 +347,7 @@ class Game
     @_dev.new_char_gui.new_char = f.add(@_dev, 'new_char')
     @_dev.new_char_gui.new_char.onChange(@_onChangeNewChar)
     @_dev.new_char_gui.type = f.add(@_dev.new_char_options, 'type',
-      ['Jackie', 'Goku'])
+      Characters.TYPES)
 
   _removeNewCharFolder: () ->
     if not @_dev.new_char_gui.folder then return

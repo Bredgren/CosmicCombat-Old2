@@ -2,7 +2,7 @@
 #_require ../config
 #_require ../global
 #_require ./debug_draw
-#_require ./character/character
+#_require ./character/characters
 
 class Universe
   planets: []
@@ -85,7 +85,8 @@ class Universe
     options.pos = options.pos ? {x: 0, y: 0}
     type = options.type ? "Goku"
     pos = new b2Vec2(options.pos.x, options.pos.y)
-    character = new Character(@, pos, type, click_callback)
+    # character = new Character(@, pos, type, click_callback)
+    character = Characters.newCharacter(@, pos, type, click_callback)
     @characters.push(character)
     return character
 
