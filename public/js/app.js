@@ -117,6 +117,7 @@
       this._graphics.fillAlpha = this._fill_alpha;
       this.DrawCircle(center, radius, color);
       this._graphics.endFill();
+      axis = axis.Copy();
       axis.Normalize();
       axis.Multiply(radius);
       edge = center.Copy();
@@ -212,14 +213,13 @@
       bodyDef = new b2Dynamics.b2BodyDef();
       bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
       this.body = this.universe.world.CreateBody(bodyDef);
+      box = new b2Shapes.b2PolygonShape();
+      box.SetAsBox(this._w, this._h);
+      this.body_box = this.body.CreateFixture2(box, 5);
       circle = new b2Shapes.b2CircleShape(this._w);
       circle.SetLocalPosition(new b2Vec2(0, this._h));
       this.body_circle = this.body.CreateFixture2(circle, 0);
       this.body_circle.SetRestitution(0);
-      box = new b2Shapes.b2PolygonShape();
-      box.SetAsBox(this._w, this._h);
-      box.m_centroid = new b2Vec2(0, -10);
-      this.body_box = this.body.CreateFixture2(box, 5);
       this.body.SetBullet(true);
       this.body.SetFixedRotation(true);
       this.body.SetPosition(init_pos);

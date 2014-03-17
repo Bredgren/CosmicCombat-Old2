@@ -46,6 +46,7 @@ class DebugDraw extends b2Dynamics.b2DebugDraw
     @DrawCircle(center, radius, color)
     @_graphics.endFill()
 
+    axis = axis.Copy()
     axis.Normalize()
     axis.Multiply(radius)
     edge = center.Copy()

@@ -30,17 +30,16 @@ class Character
     @body = @universe.world.CreateBody(bodyDef)
 
     # TODO: address the bug that requires circle to be made first
+
+    box = new b2Shapes.b2PolygonShape()
+    box.SetAsBox(@_w, @_h)
+    # box.m_centroid = new b2Vec2(0, -10)
+    @body_box = @body.CreateFixture2(box, 5)
+
     circle = new b2Shapes.b2CircleShape(@_w)
     circle.SetLocalPosition(new b2Vec2(0, @_h))
     @body_circle = @body.CreateFixture2(circle, 0)
     @body_circle.SetRestitution(0)
-
-    box = new b2Shapes.b2PolygonShape()
-    box.SetAsBox(@_w, @_h)
-    box.m_centroid = new b2Vec2(0, -10)
-    @body_box = @body.CreateFixture2(box, 5)
-    # box = new b2Shapes.b2CircleShape(@_h)
-    # @body_box = @body.CreateFixture2(box, 5)
 
     @body.SetBullet(true)
     @body.SetFixedRotation(true)
