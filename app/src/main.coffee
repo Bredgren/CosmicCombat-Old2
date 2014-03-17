@@ -6,7 +6,7 @@
 # Execute after document is loaded
 $ ->
   DOM_LOADED = true
-  assets = ["assets/img/jackie_chun.json"]
+  assets = ["assets/img/jackie_chun.json", "assets/img/goku.json"]
   loader = new PIXI.AssetLoader(assets)
   loader.onComplete = main
   loader.load()
@@ -320,38 +320,36 @@ main = ->
   queue = ->
     window.requestAnimationFrame(main_loop)
 
-  # main_loop()
-
-  t = () ->
-    anim = []
-    tex = PIXI.Texture.fromFrame("jackie_stand_01")
-    anim.push(tex)
-    for i in [1..5]
-      texture = PIXI.Texture.fromFrame("jackie_stance_0#{i}")
-      anim.push(texture)
-    for i in [0..4]
-      texture = PIXI.Texture.fromFrame("jackie_stance_0#{5-i}")
-      anim.push(texture)
-    anim.push(tex)
-
-    stand = PIXI.Sprite.fromFrame("jackie_stand_01")
-    stand.position.x = 32
-    stand.position.y = 64
-    stage.addChild(stand)
-
-    stance = new PIXI.MovieClip(anim)
-    stance.position.x = 100
-    stance.position.y = 100
-    stance.anchor.x = 0
-    stance.anchor.y = 1
-    stance.animationSpeed = 0.2
-    stance.loop = false
-    stance.play()
-    stage.addChild(stance)
-
-    main_loop()
-
   main_loop()
+
+  # t = () ->
+  #   anim = []
+  #   tex = PIXI.Texture.fromFrame("jackie_stand_01")
+  #   anim.push(tex)
+  #   for i in [1..5]
+  #     texture = PIXI.Texture.fromFrame("jackie_stance_0#{i}")
+  #     anim.push(texture)
+  #   for i in [0..4]
+  #     texture = PIXI.Texture.fromFrame("jackie_stance_0#{5-i}")
+  #     anim.push(texture)
+  #   anim.push(tex)
+
+  #   stand = PIXI.Sprite.fromFrame("jackie_stand_01")
+  #   stand.position.x = 32
+  #   stand.position.y = 64
+  #   stage.addChild(stand)
+
+  #   stance = new PIXI.MovieClip(anim)
+  #   stance.position.x = 100
+  #   stance.position.y = 100
+  #   stance.anchor.x = 0
+  #   stance.anchor.y = 1
+  #   stance.animationSpeed = 0.2
+  #   stance.loop = false
+  #   stance.play()
+  #   stage.addChild(stance)
+
+  #   main_loop()
 
 log_input = (args...) ->
   if settings.PRINT_INPUT

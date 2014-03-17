@@ -58,6 +58,26 @@ class DebugDraw extends b2Dynamics.b2DebugDraw
     @DrawPolygon(vertices, vertexCount, color)
     @_graphics.endFill()
 
+  DrawTransform: (xf) ->
+    @_graphics.lineStyle(@_line_width, 0xFF0000)
+    @_graphics.alpha = @_alpha
+
+    p1 = @camera.worldToScreen(xf.position)
+    p2 =
+      x: xf.position.x + xf.R.col1.x
+      y: xf.position.y + xf.R.col1.y
+    p2 = @camera.worldToScreen(p2)
+    p3 =
+      x: xf.position.x + xf.R.col2.x
+      y: xf.position.y + xf.R.col2.y
+    p3 = @camera.worldToScreen(p3)
+
+    @_graphics.moveTo(p1.x, p1.y)
+    @_graphics.lineTo(p2.x, p2.y)
+
+    @_graphics.moveTo(p1.x, p1.y)
+    @_graphics.lineTo(p3.x, p3.y)
+
   GetAlpha: () ->
     return @_alpha
 

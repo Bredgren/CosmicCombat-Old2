@@ -6,8 +6,17 @@ class Character
   MAX_VEL: 15
 
   # init_pos [b2Vec2]
-  constructor: (@universe, init_pos, click_callback) ->
-    @stand = PIXI.Sprite.fromFrame("jackie_stand_01")
+  constructor: (@universe, init_pos, type, click_callback) ->
+    if type is settings.CHARACTERS.JACKIE
+      @stand = PIXI.Sprite.fromFrame("jackie_stand_01")
+    else
+      @stand = PIXI.Sprite.fromFrame("goku_stand_01")
+
+    stats = settings.CHAR_STATS[type]
+    @_w = stats.w
+    @_h = stats.h
+    @_offset = stats.offset
+
     @stand.anchor.x = .5
     @stand.anchor.y = .5
     @universe.game.stage.addChildAt(@stand, 0)
@@ -20,9 +29,6 @@ class Character
     bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody
     @body = @universe.world.CreateBody(bodyDef)
 
-    @_w = .4
-    @_h = .5
-
     # TODO: address the bug that requires circle to be made first
     circle = new b2Shapes.b2CircleShape(@_w)
     circle.SetLocalPosition(new b2Vec2(0, @_h))
@@ -31,7 +37,10 @@ class Character
 
     box = new b2Shapes.b2PolygonShape()
     box.SetAsBox(@_w, @_h)
+    box.m_centroid = new b2Vec2(0, -10)
     @body_box = @body.CreateFixture2(box, 5)
+    # box = new b2Shapes.b2CircleShape(@_h)
+    # @body_box = @body.CreateFixture2(box, 5)
 
     @body.SetBullet(true)
     @body.SetFixedRotation(true)
@@ -65,8 +74,7 @@ class Character
 
   draw: () ->
     pos = @body.GetPosition()
-    # + .1 to place on ground
-    pos = {x: pos.x, y: (pos.y+.1)}
+    pos = {x: pos.x, y: (pos.y + @_offset)}
     pos = @universe.game.camera.worldToScreen(pos)
     @stand.position.x = pos.x
     @stand.position.y = pos.y

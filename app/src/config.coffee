@@ -10,4 +10,19 @@ settings = {
   BOX2D_TIME_STEP: 1 / 60
   BOX2D_VI: 10  # Velocity iterations
   BOX2D_PI: 10  # Position iterations
+
+  CHARACTERS:
+    GOKU: "Goku"
+    JACKIE: "Jackie"
+
+  # Character stats
+  CHAR_STATS:
+    Goku:
+      w: .3
+      h: .4
+      offset: 0
+    Jackie:
+      w: .4
+      h: .5
+      offset: .1
 }

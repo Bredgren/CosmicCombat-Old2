@@ -1,0 +1,16 @@
+{"frames": {
+"goku_stand_01":
+{
+    "frame": {"x":16,"y":55,"w":26,"h":37},
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": {"x":0,"y":0,"w":26,"h":37},
+    "sourceSize": {"w":26,"h":37}
+}
+
+},
+"meta": {
+    "image": "reference_goku.png",
+    "size": {"w":549,"h":1940}
+}
+}
