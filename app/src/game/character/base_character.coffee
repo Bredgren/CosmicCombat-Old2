@@ -1,9 +1,11 @@
 
 #_require ../../global
 #_require ../../config
+#_require ../energy/energy
 
 class BaseCharacter
   body: null
+  energy: null
 
   _w: 0
   _h: 0
@@ -17,12 +19,13 @@ class BaseCharacter
     up: false
     down: false
   _jumping: false
-  _jump_strength: 25
+  _jump_str: 25
   _max_vel: 15
 
   # init_pos [b2Vec2]
   constructor: (@universe, init_pos, type, click_callback) ->
     @_move_direction = new b2Vec2(0, 0)
+    @energy = new Energy(1000)
 
   update: () ->
     vel = @body.GetLinearVelocity()
@@ -33,7 +36,7 @@ class BaseCharacter
     @body.ApplyForce(force, pos)
 
     if @_jumping and @onGround()
-      imp = new b2Vec2(0, -@_jump_strength)
+      imp = new b2Vec2(0, -@_jump_str)
       @body.ApplyImpulse(imp, pos)
 
     if (Math.abs(vel.x) > @_max_vel)

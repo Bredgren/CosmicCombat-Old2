@@ -4,7 +4,7 @@
 class Goku extends BaseCharacter
   constructor: (universe, init_pos, click_callback) ->
     super(universe, init_pos, click_callback)
-    @_jump_strength = 15
+    @_jump_str = 15
 
     @stand = PIXI.Sprite.fromFrame("goku_stand_01")
     @stand.anchor.x = .5
