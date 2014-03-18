@@ -39,9 +39,22 @@ class Game
     show_pair: true
     show_shape: true
 
-  constructor: (@stage, @graphics) ->
+  constructor: (@stage) ->
+    @hud_stage = new PIXI.DisplayObjectContainer()
+    @game_stage = new PIXI.DisplayObjectContainer()
+    @debug_stage = new PIXI.DisplayObjectContainer()
+    @stage.addChild(@game_stage)
+    @stage.addChild(@hud_stage)
+    @stage.addChild(@debug_stage)
+
+    @debug_graphics = new PIXI.Graphics()
+    @hud_graphics = new PIXI.Graphics()
+
+    @debug_stage.addChild(@debug_graphics)
+    @hud_stage.addChild(@hud_graphics)
+
     @camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT)
-    @_universe = new Universe(@, @graphics, @camera)
+    @_universe = new Universe(@, @debug_graphics, @camera)
     @_resetGui()
 
     @_dev.new_char_options =
@@ -94,8 +107,45 @@ class Game
         @_dev.control_text.position.x = -100
         @_dev.control_text.position.y = 0
 
+  clear: () ->
+    @debug_graphics.clear()
+    @hud_graphics.clear()
+
   draw: () ->
     @_universe.draw()
+    @_drawEnergyBar()
+
+  _drawEnergyBar: () ->
+    if not @_controlled_char then return
+
+    energy = @_controlled_char.energy
+
+    @hud_graphics.lineStyle(1, 0xBB0000)
+    @hud_graphics.beginFill(0xFF0000)
+    @hud_graphics.fillAlpha = 0.4
+    max_bar = settings.ENERGY_BAR
+    @hud_graphics.drawRect(max_bar.x, max_bar.y, max_bar.width, max_bar.height)
+    @hud_graphics.endFill()
+
+    @hud_graphics.lineStyle(1, 0x00BB00)
+    @hud_graphics.beginFill(0x00FF00)
+    @hud_graphics.fillAlpha = 0.4
+    if energy.max() is 0
+      width = 1
+    else
+      width = Math.max((energy.current() / energy.max()) * max_bar.width, 1)
+    @hud_graphics.drawRect(max_bar.x, max_bar.y, width, max_bar.height)
+    @hud_graphics.endFill()
+
+    @hud_graphics.lineStyle(1, 0x0000BB)
+    @hud_graphics.beginFill(0x0000FF)
+    @hud_graphics.fillAlpha = 0.4
+    if energy.max() is 0
+      width = 1
+    else
+      width = Math.max((energy.strength() / energy.max()) * max_bar.width, 1)
+    @hud_graphics.drawRect(max_bar.x, max_bar.y, width, max_bar.height)
+    @hud_graphics.endFill()
 
   _onCharacterClick: (character, mousedata) =>
     if @_dev.enabled
@@ -247,7 +297,7 @@ class Game
     if not @_dev.mouse_gui.folder then return
 
     parent = @_dev.gui
-    parent.remove(@_dev.mouse_gui.folder)
+    parent.removeFolder(@_dev.mouse_gui.folder)
     @_resetMouseCoordsFolder
 
   _resetGameFolder: () ->
@@ -269,7 +319,7 @@ class Game
     if not @_dev.game_gui.folder then return
 
     parent = @_dev.gui
-    parent.remove(@_dev.game_gui.folder)
+    parent.removeFolder(@_dev.game_gui.folder)
     @_resetGameFolder()
 
   _resetDebugDrawFolder: () ->
@@ -309,7 +359,7 @@ class Game
     if not @_dev.debug_gui.folder then return
 
     parent = @_dev.game_gui.folder
-    parent.remove(@_dev.debug_gui.folder)
+    parent.removeFolder(@_dev.debug_gui.folder)
     @_resetDebugDrawFolder()
 
   _resetCharacterFolder: () ->
@@ -331,7 +381,7 @@ class Game
     if not @_dev.char_gui.folder then return
 
     parent = @_dev.gui
-    parent.remove(@_dev.char_gui.folder)
+    parent.removeFolder(@_dev.char_gui.folder)
     @_resetCharacterFolder()
 
   _resetNewCharFolder: () ->
@@ -353,7 +403,7 @@ class Game
     if not @_dev.new_char_gui.folder then return
 
     parent = @_dev.char_gui.folder
-    parent.remove(@_dev.new_char_gui.folder)
+    parent.removeFolder(@_dev.new_char_gui.folder)
     @_resetNewCharFolder()
 
   _resetSelectedCharFolder: () ->
@@ -386,7 +436,7 @@ class Game
     if not @_dev.cur_char_gui.folder then return
 
     parent = @_dev.char_gui.folder
-    parent.remove(@_dev.cur_char_gui.folder)
+    parent.removeFolder(@_dev.cur_char_gui.folder)
     @_resetSelectedCharFolder()
 
   _resetControlledCharFolder: () ->
@@ -395,6 +445,7 @@ class Game
       pos:
         x: 0
         y: 0
+    @_resetControlledEnergyFolder()
 
   # Creates or updates the folder
   _createControlledCharFolder: () ->
@@ -408,7 +459,9 @@ class Game
       f = @_dev.con_char_gui.folder
       f.remove(@_dev.con_char_gui.pos.x)
       f.remove(@_dev.con_char_gui.pos.y)
+      @_removeControlledEnergyFolder()
 
+    @_createControlledEnergyFolder()
     pos = @_controlled_char.position()
     @_dev.con_char_gui.pos.x = f.add(pos, 'x').listen()
     @_dev.con_char_gui.pos.y = f.add(pos, 'y').listen()
@@ -420,5 +473,63 @@ class Game
     if not @_dev.con_char_gui.folder then return
 
     parent = @_dev.char_gui.folder
-    parent.remove(@_dev.con_char_gui.folder)
+    parent.removeFolder(@_dev.con_char_gui.folder)
     @_resetControlledCharFolder()
+
+  _resetControlledEnergyFolder: () ->
+    @_dev.con_energy_gui =
+      folder: null
+      max_gui: null
+      current_gui: null
+      strength_gui: null
+      max: 0
+      current: 0
+      strength: 0
+
+  _createControlledEnergyFolder: () ->
+    if not @_controlled_char then return
+
+    parent = @_dev.con_char_gui.folder
+    f = parent.addFolder('Energy')
+    @_dev.con_energy_gui.folder = f
+
+    g = @_dev.con_energy_gui
+    energy = @_controlled_char.energy
+    g.max = energy.max()
+    g.current = energy.current()
+    g.strength = energy.strength()
+
+    updateStrength = () ->
+      g.strength = energy.strength()
+      g.strength_gui.updateDisplay()
+
+    updateCurrent = (value) ->
+      g.current = energy.current()
+      g.current_gui.updateDisplay()
+      g.strength_gui.updateDisplay()
+      updateStrength()
+
+    updateMax = (value) ->
+      g.max = energy.max()
+      g.max_gui.updateDisplay()
+      updateCurrent(value)
+
+    g.max_gui = f.add(g, 'max')
+    g.max_gui.onChange((value) ->
+      energy.setMax(value)
+      updateMax())
+    g.current_gui = f.add(g, 'current')
+    g.current_gui.onChange((value) ->
+      energy.setCurrent(value)
+      updateCurrent())
+    g.strength_gui = f.add(g, 'strength')
+    g.strength_gui.onChange((value) ->
+      energy.setStrength(value)
+      updateStrength())
+
+  _removeControlledEnergyFolder: () ->
+    if not @_dev.con_energy_gui.folder then return
+
+    parent = @_dev.con_char_gui.folder
+    parent.removeFolder(@_dev.con_energy_gui.folder)
+    @_resetControlledEnergyFolder()

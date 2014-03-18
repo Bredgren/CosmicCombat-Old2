@@ -6,6 +6,15 @@ class Energy
     @_current = @_max
     @_strength = @_max
 
+  strength: () ->
+    return @_strength
+
+  current: () ->
+    return @_current
+
+  max: () ->
+    return @_max
+
   # Increase strength but not past current.
   # Returns the amount strength increased by.
   incStrength: (amount) ->

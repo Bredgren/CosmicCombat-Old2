@@ -11,3 +11,9 @@ settings = {
   BOX2D_VI: 10  # Velocity iterations
   BOX2D_PI: 10  # Position iterations
 }
+
+settings.ENERGY_BAR =
+  width: settings.WIDTH * 0.6
+  height: settings.WIDTH * 0.6 * 0.05
+  x: settings.WIDTH / 2 -  settings.WIDTH * 0.6 / 2
+  y: 15

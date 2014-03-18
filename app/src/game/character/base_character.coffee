@@ -7,6 +7,8 @@ class BaseCharacter
   body: null
   energy: null
 
+  _stage: null
+
   _w: 0
   _h: 0
   _body_box: null
@@ -24,6 +26,7 @@ class BaseCharacter
 
   # init_pos [b2Vec2]
   constructor: (@universe, init_pos, type, click_callback) ->
+    @_stage = @universe.game.game_stage
     @_move_direction = new b2Vec2(0, 0)
     @energy = new Energy(1000)
 

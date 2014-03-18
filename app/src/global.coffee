@@ -9,3 +9,8 @@ b2Contacts = Box2D.Dynamics.Contacts
 b2Controllers = Box2D.Dynamics.Controllers
 b2Joints = Box2D.Dynamics.Joints
 b2DebugDraw = Box2D.Dynamics.b2DebugDraw
+
+dat.GUI.prototype.removeFolder = (folder) ->
+  @__ul.removeChild(folder.domElement.parentNode)
+  delete @__folders[folder.name]
+  @onResize()

@@ -7,7 +7,7 @@ class Jackie extends BaseCharacter
     @stand = PIXI.Sprite.fromFrame("jackie_stand_01")
     @stand.anchor.x = .5
     @stand.anchor.y = .5
-    @universe.game.stage.addChildAt(@stand, 0)
+    @_stage.addChild(@stand)
 
     @stand.setInteractive(true)
     @stand.click = (mousedata) =>

@@ -36,10 +36,7 @@ main = ->
 
   canvas = $('canvas')[0]
 
-  graphics = new PIXI.Graphics()
-  stage.addChild(graphics)
-
-  game = new Game(stage, graphics)
+  game = new Game(stage)
 
   # jackie_tx = PIXI.Texture.fromImage("assets/img/jackie.png")
   # jackie = new PIXI.Sprite(jackie_tx)
@@ -305,7 +302,7 @@ main = ->
     game.update()
 
   clear = ->
-    graphics.clear()
+    game.clear()
 
   draw = ->
     # if settings.DEBUG

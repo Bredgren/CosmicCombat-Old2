@@ -18,6 +18,13 @@
     BOX2D_PI: 10
   };
 
+  settings.ENERGY_BAR = {
+    width: settings.WIDTH * 0.6,
+    height: settings.WIDTH * 0.6 * 0.05,
+    x: settings.WIDTH / 2 - settings.WIDTH * 0.6 / 2,
+    y: 15
+  };
+
   b2Common = Box2D.Common;
 
   b2Math = Box2D.Common.Math;
@@ -37,6 +44,12 @@
   b2Joints = Box2D.Dynamics.Joints;
 
   b2DebugDraw = Box2D.Dynamics.b2DebugDraw;
+
+  dat.GUI.prototype.removeFolder = function(folder) {
+    this.__ul.removeChild(folder.domElement.parentNode);
+    delete this.__folders[folder.name];
+    return this.onResize();
+  };
 
   DebugDraw = (function(_super) {
     __extends(DebugDraw, _super);
@@ -177,6 +190,18 @@
       this._strength = this._max;
     }
 
+    Energy.prototype.strength = function() {
+      return this._strength;
+    };
+
+    Energy.prototype.current = function() {
+      return this._current;
+    };
+
+    Energy.prototype.max = function() {
+      return this._max;
+    };
+
     Energy.prototype.incStrength = function(amount) {
       var prev;
 
@@ -279,6 +304,8 @@
 
     BaseCharacter.prototype.energy = null;
 
+    BaseCharacter.prototype._stage = null;
+
     BaseCharacter.prototype._w = 0;
 
     BaseCharacter.prototype._h = 0;
@@ -304,6 +331,7 @@
 
     function BaseCharacter(universe, init_pos, type, click_callback) {
       this.universe = universe;
+      this._stage = this.universe.game.game_stage;
       this._move_direction = new b2Vec2(0, 0);
       this.energy = new Energy(1000);
     }
@@ -421,7 +449,7 @@
       this.stand = PIXI.Sprite.fromFrame("jackie_stand_01");
       this.stand.anchor.x = .5;
       this.stand.anchor.y = .5;
-      this.universe.game.stage.addChildAt(this.stand, 0);
+      this._stage.addChild(this.stand);
       this.stand.setInteractive(true);
       this.stand.click = function(mousedata) {
         return click_callback(_this, mousedata);
@@ -484,7 +512,7 @@
       this.stand = PIXI.Sprite.fromFrame("goku_stand_01");
       this.stand.anchor.x = .5;
       this.stand.anchor.y = .5;
-      this.universe.game.stage.addChildAt(this.stand, 0);
+      this._stage.addChild(this.stand);
       this.stand.setInteractive(true);
       this.stand.click = function(mousedata) {
         return click_callback(_this, mousedata);
@@ -826,15 +854,24 @@
       show_shape: true
     };
 
-    function Game(stage, graphics) {
+    function Game(stage) {
       var style;
 
       this.stage = stage;
-      this.graphics = graphics;
       this._onChangeNewChar = __bind(this._onChangeNewChar, this);
       this._onCharacterClick = __bind(this._onCharacterClick, this);
+      this.hud_stage = new PIXI.DisplayObjectContainer();
+      this.game_stage = new PIXI.DisplayObjectContainer();
+      this.debug_stage = new PIXI.DisplayObjectContainer();
+      this.stage.addChild(this.game_stage);
+      this.stage.addChild(this.hud_stage);
+      this.stage.addChild(this.debug_stage);
+      this.debug_graphics = new PIXI.Graphics();
+      this.hud_graphics = new PIXI.Graphics();
+      this.debug_stage.addChild(this.debug_graphics);
+      this.hud_stage.addChild(this.hud_graphics);
       this.camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT);
-      this._universe = new Universe(this, this.graphics, this.camera);
+      this._universe = new Universe(this, this.debug_graphics, this.camera);
       this._resetGui();
       this._dev.new_char_options = {
         pos: {
@@ -899,8 +936,49 @@
       }
     };
 
+    Game.prototype.clear = function() {
+      this.debug_graphics.clear();
+      return this.hud_graphics.clear();
+    };
+
     Game.prototype.draw = function() {
-      return this._universe.draw();
+      this._universe.draw();
+      return this._drawEnergyBar();
+    };
+
+    Game.prototype._drawEnergyBar = function() {
+      var energy, max_bar, width;
+
+      if (!this._controlled_char) {
+        return;
+      }
+      energy = this._controlled_char.energy;
+      this.hud_graphics.lineStyle(1, 0xBB0000);
+      this.hud_graphics.beginFill(0xFF0000);
+      this.hud_graphics.fillAlpha = 0.4;
+      max_bar = settings.ENERGY_BAR;
+      this.hud_graphics.drawRect(max_bar.x, max_bar.y, max_bar.width, max_bar.height);
+      this.hud_graphics.endFill();
+      this.hud_graphics.lineStyle(1, 0x00BB00);
+      this.hud_graphics.beginFill(0x00FF00);
+      this.hud_graphics.fillAlpha = 0.4;
+      if (energy.max() === 0) {
+        width = 1;
+      } else {
+        width = Math.max((energy.current() / energy.max()) * max_bar.width, 1);
+      }
+      this.hud_graphics.drawRect(max_bar.x, max_bar.y, width, max_bar.height);
+      this.hud_graphics.endFill();
+      this.hud_graphics.lineStyle(1, 0x0000BB);
+      this.hud_graphics.beginFill(0x0000FF);
+      this.hud_graphics.fillAlpha = 0.4;
+      if (energy.max() === 0) {
+        width = 1;
+      } else {
+        width = Math.max((energy.strength() / energy.max()) * max_bar.width, 1);
+      }
+      this.hud_graphics.drawRect(max_bar.x, max_bar.y, width, max_bar.height);
+      return this.hud_graphics.endFill();
     };
 
     Game.prototype._onCharacterClick = function(character, mousedata) {
@@ -1090,7 +1168,7 @@
         return;
       }
       parent = this._dev.gui;
-      parent.remove(this._dev.mouse_gui.folder);
+      parent.removeFolder(this._dev.mouse_gui.folder);
       return this._resetMouseCoordsFolder;
     };
 
@@ -1121,7 +1199,7 @@
         return;
       }
       parent = this._dev.gui;
-      parent.remove(this._dev.game_gui.folder);
+      parent.removeFolder(this._dev.game_gui.folder);
       return this._resetGameFolder();
     };
 
@@ -1176,7 +1254,7 @@
         return;
       }
       parent = this._dev.game_gui.folder;
-      parent.remove(this._dev.debug_gui.folder);
+      parent.removeFolder(this._dev.debug_gui.folder);
       return this._resetDebugDrawFolder();
     };
 
@@ -1207,7 +1285,7 @@
         return;
       }
       parent = this._dev.gui;
-      parent.remove(this._dev.char_gui.folder);
+      parent.removeFolder(this._dev.char_gui.folder);
       return this._resetCharacterFolder();
     };
 
@@ -1237,7 +1315,7 @@
         return;
       }
       parent = this._dev.char_gui.folder;
-      parent.remove(this._dev.new_char_gui.folder);
+      parent.removeFolder(this._dev.new_char_gui.folder);
       return this._resetNewCharFolder();
     };
 
@@ -1280,18 +1358,19 @@
         return;
       }
       parent = this._dev.char_gui.folder;
-      parent.remove(this._dev.cur_char_gui.folder);
+      parent.removeFolder(this._dev.cur_char_gui.folder);
       return this._resetSelectedCharFolder();
     };
 
     Game.prototype._resetControlledCharFolder = function() {
-      return this._dev.con_char_gui = {
+      this._dev.con_char_gui = {
         folder: null,
         pos: {
           x: 0,
           y: 0
         }
       };
+      return this._resetControlledEnergyFolder();
     };
 
     Game.prototype._createControlledCharFolder = function() {
@@ -1308,7 +1387,9 @@
         f = this._dev.con_char_gui.folder;
         f.remove(this._dev.con_char_gui.pos.x);
         f.remove(this._dev.con_char_gui.pos.y);
+        this._removeControlledEnergyFolder();
       }
+      this._createControlledEnergyFolder();
       pos = this._controlled_char.position();
       this._dev.con_char_gui.pos.x = f.add(pos, 'x').listen();
       return this._dev.con_char_gui.pos.y = f.add(pos, 'y').listen();
@@ -1321,8 +1402,77 @@
         return;
       }
       parent = this._dev.char_gui.folder;
-      parent.remove(this._dev.con_char_gui.folder);
+      parent.removeFolder(this._dev.con_char_gui.folder);
       return this._resetControlledCharFolder();
+    };
+
+    Game.prototype._resetControlledEnergyFolder = function() {
+      return this._dev.con_energy_gui = {
+        folder: null,
+        max_gui: null,
+        current_gui: null,
+        strength_gui: null,
+        max: 0,
+        current: 0,
+        strength: 0
+      };
+    };
+
+    Game.prototype._createControlledEnergyFolder = function() {
+      var energy, f, g, parent, updateCurrent, updateMax, updateStrength;
+
+      if (!this._controlled_char) {
+        return;
+      }
+      parent = this._dev.con_char_gui.folder;
+      f = parent.addFolder('Energy');
+      this._dev.con_energy_gui.folder = f;
+      g = this._dev.con_energy_gui;
+      energy = this._controlled_char.energy;
+      g.max = energy.max();
+      g.current = energy.current();
+      g.strength = energy.strength();
+      updateStrength = function() {
+        g.strength = energy.strength();
+        return g.strength_gui.updateDisplay();
+      };
+      updateCurrent = function(value) {
+        g.current = energy.current();
+        g.current_gui.updateDisplay();
+        g.strength_gui.updateDisplay();
+        return updateStrength();
+      };
+      updateMax = function(value) {
+        g.max = energy.max();
+        g.max_gui.updateDisplay();
+        return updateCurrent(value);
+      };
+      g.max_gui = f.add(g, 'max');
+      g.max_gui.onChange(function(value) {
+        energy.setMax(value);
+        return updateMax();
+      });
+      g.current_gui = f.add(g, 'current');
+      g.current_gui.onChange(function(value) {
+        energy.setCurrent(value);
+        return updateCurrent();
+      });
+      g.strength_gui = f.add(g, 'strength');
+      return g.strength_gui.onChange(function(value) {
+        energy.setStrength(value);
+        return updateStrength();
+      });
+    };
+
+    Game.prototype._removeControlledEnergyFolder = function() {
+      var parent;
+
+      if (!this._dev.con_energy_gui.folder) {
+        return;
+      }
+      parent = this._dev.con_char_gui.folder;
+      parent.removeFolder(this._dev.con_energy_gui.folder);
+      return this._resetControlledEnergyFolder();
     };
 
     return Game;
@@ -1346,7 +1496,7 @@
   stance = null;
 
   main = function() {
-    var black, blurHandler, body, canvas, clear, clickHandler, container, draw, event_catcher, focusHandler, game, graphics, keyDownListener, keyUpListener, main_loop, mouseDownHandler, mouseMoveHandler, mouseOutHandler, mouseUpHandler, mouseWheelHandler, onBeforeUnload, onResize, queue, renderer, stage, update;
+    var black, blurHandler, body, canvas, clear, clickHandler, container, draw, event_catcher, focusHandler, game, keyDownListener, keyUpListener, main_loop, mouseDownHandler, mouseMoveHandler, mouseOutHandler, mouseUpHandler, mouseWheelHandler, onBeforeUnload, onResize, queue, renderer, stage, update;
 
     W = settings.FULL_SCREEN ? window.innerWidth : settings.WIDTH;
     H = settings.FULL_SCREEN ? window.innerHeight : settings.HEIGHT;
@@ -1361,9 +1511,7 @@
     renderer = PIXI.autoDetectRenderer(W, H);
     container.append(renderer.view);
     canvas = $('canvas')[0];
-    graphics = new PIXI.Graphics();
-    stage.addChild(graphics);
-    game = new Game(stage, graphics);
+    game = new Game(stage);
     onResize = function() {
       return log_input("resize");
     };
@@ -1460,7 +1608,7 @@
       return game.update();
     };
     clear = function() {
-      return graphics.clear();
+      return game.clear();
     };
     draw = function() {
       game.draw();
