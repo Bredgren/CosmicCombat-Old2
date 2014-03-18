@@ -435,6 +435,7 @@ class Game
       @_removeSelectedEnergyFolder()
 
     @_createSelectedEnergyFolder()
+    # TODO: fix bug when user changes x/y they are set to NaN.
     pos = @_dev.selected_char.position()
     @_dev.cur_char_gui.pos.x = f.add(pos, 'x').listen()
     @_dev.cur_char_gui.pos.y = f.add(pos, 'y').listen()

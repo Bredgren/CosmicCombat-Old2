@@ -458,6 +458,14 @@
       this.stand.click = function(mousedata) {
         return click_callback(_this, mousedata);
       };
+      this.stand_copy = PIXI.Sprite.fromFrame("jackie_stand_01");
+      this.stand_copy.anchor.x = .5;
+      this.stand_copy.anchor.y = .5;
+      this._stage.addChild(this.stand_copy);
+      this.stand.setInteractive(true);
+      this.stand.click = function(mousedata) {
+        return click_callback(_this, mousedata);
+      };
       this._w = .4;
       this._h = .5;
       this._offset = .1;
@@ -481,16 +489,31 @@
     };
 
     Jackie.prototype.draw = function() {
-      var pos;
+      var copy_bounds, copy_pos, pos, world_bounds;
 
       pos = this.body.GetPosition();
       pos = {
         x: pos.x,
         y: pos.y + this._offset
       };
+      world_bounds = this.universe.getBounds();
+      copy_pos = {
+        x: pos.x + world_bounds.w,
+        y: pos.y
+      };
+      copy_bounds = {
+        x: world_bounds.x - world_bounds.w / 2,
+        y: world_bounds.y,
+        w: world_bounds.w * 2,
+        h: world_bounds.h
+      };
+      copy_pos = this.universe.boundedPoint(copy_pos, copy_bounds);
       pos = this.universe.game.camera.worldToScreen(pos);
       this.stand.position.x = pos.x;
-      return this.stand.position.y = pos.y;
+      this.stand.position.y = pos.y;
+      copy_pos = this.universe.game.camera.worldToScreen(copy_pos);
+      this.stand_copy.position.x = copy_pos.x;
+      return this.stand_copy.position.y = copy_pos.y;
     };
 
     Jackie.prototype.size = function() {
@@ -660,18 +683,13 @@
     };
 
     Universe.prototype._wrapObjects = function() {
-      var body, offset, pos, _results;
+      var body, new_pos, _results;
 
       body = this.world.GetBodyList();
       _results = [];
       while (body) {
-        pos = body.GetPosition();
-        offset = this.__terrain_width / 2;
-        if (pos.x + offset < 0) {
-          pos.x = this.__terrain_width + pos.x;
-        }
-        pos.x = ((pos.x + offset) % this.__terrain_width) - offset;
-        body.SetPosition(pos);
+        new_pos = this.boundedPoint(body.GetPosition(), this.getBounds());
+        body.SetPosition(new b2Vec2(new_pos.x, new_pos.y));
         _results.push(body = body.GetNext());
       }
       return _results;
@@ -688,6 +706,30 @@
       if (this._debug_draw) {
         return this.world.DrawDebugData();
       }
+    };
+
+    Universe.prototype.getBounds = function() {
+      return {
+        x: -this.__terrain_width / 2,
+        y: -this.__terrain_width,
+        w: this.__terrain_width,
+        h: this.__terrain_width + 10
+      };
+    };
+
+    Universe.prototype.boundedPoint = function(point, bounds) {
+      var x;
+
+      x = point.x - bounds.x;
+      if (x < 0) {
+        x = (bounds.x + bounds.w) + x;
+      } else {
+        x = (x % bounds.w) + bounds.x;
+      }
+      return {
+        x: x,
+        y: point.y
+      };
     };
 
     Universe.prototype.toggleDebugDraw = function() {

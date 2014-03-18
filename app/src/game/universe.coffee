@@ -62,18 +62,32 @@ class Universe
   _wrapObjects: () ->
     body = @world.GetBodyList()
     while body
-      pos = body.GetPosition()
-      offset = @__terrain_width / 2
-      if pos.x + offset < 0
-        pos.x = @__terrain_width + pos.x
-      pos.x = ((pos.x + offset) % @__terrain_width) - offset
-      body.SetPosition(pos)
+      new_pos = @boundedPoint(body.GetPosition(), @getBounds())
+      body.SetPosition(new b2Vec2(new_pos.x, new_pos.y))
       body = body.GetNext()
 
   draw: () ->
     c.draw() for c in @characters
     if @_debug_draw
       @world.DrawDebugData()
+
+  getBounds: () ->
+    return {
+      x: -@__terrain_width / 2
+      y: -@__terrain_width
+      w: @__terrain_width
+      h: @__terrain_width + 10
+      }
+
+  # Takes a point [{x, y}] and returns a new point whose values are wrapped
+  # Astroids-style within the space specified by getBounds().
+  boundedPoint: (point, bounds) ->
+    x = point.x - bounds.x
+    if x < 0
+      x = (bounds.x + bounds.w) + x
+    else
+      x = (x % bounds.w) + bounds.x
+    return {x: x, y: point.y}
 
   toggleDebugDraw: () ->
     @_debug_draw = not @_debug_draw
