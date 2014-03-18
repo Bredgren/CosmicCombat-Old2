@@ -918,7 +918,7 @@
           size = this._dev.selected_char.size();
           w = this._dev.select_text.width;
           this._dev.select_text.position.x = Math.round(pos.x - w / 2);
-          this._dev.select_text.position.y = Math.round(pos.y - size.h / 2 - 20);
+          this._dev.select_text.position.y = Math.round(pos.y - size.h / 2 - 10);
         } else {
           this._dev.select_text.position.x = -100;
           this._dev.select_text.position.y = 0;
@@ -1095,11 +1095,16 @@
           this._controlled_char.endJump();
         }
         this._controlled_char = this._dev.selected_char;
-        return this._createControlledCharFolder();
+        this._createControlledCharFolder();
+        this._removeSelectedCharFolder();
+        return this._dev.selected_char = null;
       }
     };
 
     Game.prototype._selectCharacter = function(character) {
+      if (character === this._controlled_char || character === this._dev.selected_char) {
+        return;
+      }
       this._dev.selected_char = character;
       return this._createSelectedCharFolder();
     };
@@ -1320,7 +1325,7 @@
     };
 
     Game.prototype._resetSelectedCharFolder = function() {
-      return this._dev.cur_char_gui = {
+      this._dev.cur_char_gui = {
         folder: null,
         control: null,
         pos: {
@@ -1328,6 +1333,7 @@
           y: 0
         }
       };
+      return this._resetSelectedEnergyFolder();
     };
 
     Game.prototype._createSelectedCharFolder = function() {
@@ -1345,7 +1351,9 @@
         f = this._dev.cur_char_gui.folder;
         f.remove(this._dev.cur_char_gui.pos.x);
         f.remove(this._dev.cur_char_gui.pos.y);
+        this._removeSelectedEnergyFolder();
       }
+      this._createSelectedEnergyFolder();
       pos = this._dev.selected_char.position();
       this._dev.cur_char_gui.pos.x = f.add(pos, 'x').listen();
       return this._dev.cur_char_gui.pos.y = f.add(pos, 'y').listen();
@@ -1419,49 +1427,12 @@
     };
 
     Game.prototype._createControlledEnergyFolder = function() {
-      var energy, f, g, parent, updateCurrent, updateMax, updateStrength;
+      var f, gui, parent;
 
-      if (!this._controlled_char) {
-        return;
-      }
       parent = this._dev.con_char_gui.folder;
-      f = parent.addFolder('Energy');
-      this._dev.con_energy_gui.folder = f;
-      g = this._dev.con_energy_gui;
-      energy = this._controlled_char.energy;
-      g.max = energy.max();
-      g.current = energy.current();
-      g.strength = energy.strength();
-      updateStrength = function() {
-        g.strength = energy.strength();
-        return g.strength_gui.updateDisplay();
-      };
-      updateCurrent = function(value) {
-        g.current = energy.current();
-        g.current_gui.updateDisplay();
-        g.strength_gui.updateDisplay();
-        return updateStrength();
-      };
-      updateMax = function(value) {
-        g.max = energy.max();
-        g.max_gui.updateDisplay();
-        return updateCurrent(value);
-      };
-      g.max_gui = f.add(g, 'max');
-      g.max_gui.onChange(function(value) {
-        energy.setMax(value);
-        return updateMax();
-      });
-      g.current_gui = f.add(g, 'current');
-      g.current_gui.onChange(function(value) {
-        energy.setCurrent(value);
-        return updateCurrent();
-      });
-      g.strength_gui = f.add(g, 'strength');
-      return g.strength_gui.onChange(function(value) {
-        energy.setStrength(value);
-        return updateStrength();
-      });
+      gui = this._dev.con_energy_gui;
+      f = this._createEnergyFolder(parent, gui, this._controlled_char);
+      return this._dev.con_energy_gui.folder = f;
     };
 
     Game.prototype._removeControlledEnergyFolder = function() {
@@ -1473,6 +1444,82 @@
       parent = this._dev.con_char_gui.folder;
       parent.removeFolder(this._dev.con_energy_gui.folder);
       return this._resetControlledEnergyFolder();
+    };
+
+    Game.prototype._resetSelectedEnergyFolder = function() {
+      return this._dev.cur_energy_gui = {
+        folder: null,
+        max_gui: null,
+        current_gui: null,
+        strength_gui: null,
+        max: 0,
+        current: 0,
+        strength: 0
+      };
+    };
+
+    Game.prototype._createSelectedEnergyFolder = function() {
+      var f, gui, parent;
+
+      parent = this._dev.cur_char_gui.folder;
+      gui = this._dev.cur_energy_gui;
+      f = this._createEnergyFolder(parent, gui, this._dev.selected_char);
+      return this._dev.cur_energy_gui.folder = f;
+    };
+
+    Game.prototype._removeSelectedEnergyFolder = function() {
+      var parent;
+
+      if (!this._dev.cur_energy_gui.folder) {
+        return;
+      }
+      parent = this._dev.cur_char_gui.folder;
+      parent.removeFolder(this._dev.cur_energy_gui.folder);
+      return this._resetSelectedEnergyFolder();
+    };
+
+    Game.prototype._createEnergyFolder = function(parent, gui, char) {
+      var energy, f, updateCurrent, updateMax, updateStrength;
+
+      if (!char) {
+        return;
+      }
+      f = parent.addFolder('Energy');
+      energy = char.energy;
+      gui.max = energy.max();
+      gui.current = energy.current();
+      gui.strength = energy.strength();
+      updateStrength = function() {
+        gui.strength = energy.strength();
+        return gui.strength_gui.updateDisplay();
+      };
+      updateCurrent = function(value) {
+        gui.current = energy.current();
+        gui.current_gui.updateDisplay();
+        gui.strength_gui.updateDisplay();
+        return updateStrength();
+      };
+      updateMax = function(value) {
+        gui.max = energy.max();
+        gui.max_gui.updateDisplay();
+        return updateCurrent(value);
+      };
+      gui.max_gui = f.add(gui, 'max');
+      gui.max_gui.onChange(function(value) {
+        energy.setMax(value);
+        return updateMax();
+      });
+      gui.current_gui = f.add(gui, 'current');
+      gui.current_gui.onChange(function(value) {
+        energy.setCurrent(value);
+        return updateCurrent();
+      });
+      gui.strength_gui = f.add(gui, 'strength');
+      gui.strength_gui.onChange(function(value) {
+        energy.setStrength(value);
+        return updateStrength();
+      });
+      return f;
     };
 
     return Game;

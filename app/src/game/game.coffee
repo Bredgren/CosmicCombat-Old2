@@ -93,7 +93,7 @@ class Game
         size = @_dev.selected_char.size()
         w = @_dev.select_text.width
         @_dev.select_text.position.x = Math.round(pos.x - w / 2)
-        @_dev.select_text.position.y = Math.round(pos.y - size.h / 2 - 20)
+        @_dev.select_text.position.y = Math.round(pos.y - size.h / 2 - 10)
       else
         @_dev.select_text.position.x = -100
         @_dev.select_text.position.y = 0
@@ -239,8 +239,12 @@ class Game
         @_controlled_char.endJump()
       @_controlled_char = @_dev.selected_char
       @_createControlledCharFolder()
+      @_removeSelectedCharFolder()
+      @_dev.selected_char = null
 
   _selectCharacter: (character) ->
+    if character is @_controlled_char or character is @_dev.selected_char
+      return
     @_dev.selected_char = character
     @_createSelectedCharFolder()
 
@@ -413,6 +417,7 @@ class Game
       pos:
         x: 0
         y: 0
+    @_resetSelectedEnergyFolder()
 
   # Creates or updates the folder
   _createSelectedCharFolder: () ->
@@ -427,7 +432,9 @@ class Game
       f = @_dev.cur_char_gui.folder
       f.remove(@_dev.cur_char_gui.pos.x)
       f.remove(@_dev.cur_char_gui.pos.y)
+      @_removeSelectedEnergyFolder()
 
+    @_createSelectedEnergyFolder()
     pos = @_dev.selected_char.position()
     @_dev.cur_char_gui.pos.x = f.add(pos, 'x').listen()
     @_dev.cur_char_gui.pos.y = f.add(pos, 'y').listen()
@@ -487,45 +494,10 @@ class Game
       strength: 0
 
   _createControlledEnergyFolder: () ->
-    if not @_controlled_char then return
-
     parent = @_dev.con_char_gui.folder
-    f = parent.addFolder('Energy')
+    gui = @_dev.con_energy_gui
+    f = @_createEnergyFolder(parent, gui, @_controlled_char)
     @_dev.con_energy_gui.folder = f
-
-    g = @_dev.con_energy_gui
-    energy = @_controlled_char.energy
-    g.max = energy.max()
-    g.current = energy.current()
-    g.strength = energy.strength()
-
-    updateStrength = () ->
-      g.strength = energy.strength()
-      g.strength_gui.updateDisplay()
-
-    updateCurrent = (value) ->
-      g.current = energy.current()
-      g.current_gui.updateDisplay()
-      g.strength_gui.updateDisplay()
-      updateStrength()
-
-    updateMax = (value) ->
-      g.max = energy.max()
-      g.max_gui.updateDisplay()
-      updateCurrent(value)
-
-    g.max_gui = f.add(g, 'max')
-    g.max_gui.onChange((value) ->
-      energy.setMax(value)
-      updateMax())
-    g.current_gui = f.add(g, 'current')
-    g.current_gui.onChange((value) ->
-      energy.setCurrent(value)
-      updateCurrent())
-    g.strength_gui = f.add(g, 'strength')
-    g.strength_gui.onChange((value) ->
-      energy.setStrength(value)
-      updateStrength())
 
   _removeControlledEnergyFolder: () ->
     if not @_dev.con_energy_gui.folder then return
@@ -533,3 +505,66 @@ class Game
     parent = @_dev.con_char_gui.folder
     parent.removeFolder(@_dev.con_energy_gui.folder)
     @_resetControlledEnergyFolder()
+
+  _resetSelectedEnergyFolder: () ->
+    @_dev.cur_energy_gui =
+      folder: null
+      max_gui: null
+      current_gui: null
+      strength_gui: null
+      max: 0
+      current: 0
+      strength: 0
+
+  _createSelectedEnergyFolder: () ->
+    parent = @_dev.cur_char_gui.folder
+    gui = @_dev.cur_energy_gui
+    f = @_createEnergyFolder(parent, gui, @_dev.selected_char)
+    @_dev.cur_energy_gui.folder = f
+
+  _removeSelectedEnergyFolder: () ->
+    if not @_dev.cur_energy_gui.folder then return
+
+    parent = @_dev.cur_char_gui.folder
+    parent.removeFolder(@_dev.cur_energy_gui.folder)
+    @_resetSelectedEnergyFolder()
+
+  _createEnergyFolder: (parent, gui, char) ->
+    if not char then return
+
+    f = parent.addFolder('Energy')
+
+    energy = char.energy
+    gui.max = energy.max()
+    gui.current = energy.current()
+    gui.strength = energy.strength()
+
+    updateStrength = () ->
+      gui.strength = energy.strength()
+      gui.strength_gui.updateDisplay()
+
+    updateCurrent = (value) ->
+      gui.current = energy.current()
+      gui.current_gui.updateDisplay()
+      gui.strength_gui.updateDisplay()
+      updateStrength()
+
+    updateMax = (value) ->
+      gui.max = energy.max()
+      gui.max_gui.updateDisplay()
+      updateCurrent(value)
+
+    gui.max_gui = f.add(gui, 'max')
+    gui.max_gui.onChange((value) ->
+      energy.setMax(value)
+      updateMax())
+    gui.current_gui = f.add(gui, 'current')
+    gui.current_gui.onChange((value) ->
+      energy.setCurrent(value)
+      updateCurrent())
+    gui.strength_gui = f.add(gui, 'strength')
+    gui.strength_gui.onChange((value) ->
+      energy.setStrength(value)
+      updateStrength())
+
+    return f
