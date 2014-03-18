@@ -361,6 +361,10 @@
       return this.body.GetPosition();
     };
 
+    BaseCharacter.prototype.setPosition = function(pos) {
+      return this.body.SetPosition(pos);
+    };
+
     BaseCharacter.prototype.size = function() {};
 
     BaseCharacter.prototype.onGround = function() {
@@ -601,6 +605,8 @@
 
     Universe.prototype._debug_drawer = null;
 
+    Universe.prototype.__terrain_width = 100;
+
     Universe.prototype.db_draw_flags = {
       aabb: b2DebugDraw.e_aabbBit,
       center: b2DebugDraw.e_centerOfMassBit,
@@ -648,8 +654,27 @@
         c = _ref[_i];
         c.update();
       }
+      this._wrapObjects();
       this.world.Step(settings.BOX2D_TIME_STEP, settings.BOX2D_VI, settings.BOX2D_PI);
       return this.world.ClearForces();
+    };
+
+    Universe.prototype._wrapObjects = function() {
+      var body, offset, pos, _results;
+
+      body = this.world.GetBodyList();
+      _results = [];
+      while (body) {
+        pos = body.GetPosition();
+        offset = this.__terrain_width / 2;
+        if (pos.x + offset < 0) {
+          pos.x = this.__terrain_width + pos.x;
+        }
+        pos.x = ((pos.x + offset) % this.__terrain_width) - offset;
+        body.SetPosition(pos);
+        _results.push(body = body.GetNext());
+      }
+      return _results;
     };
 
     Universe.prototype.draw = function() {
@@ -703,7 +728,7 @@
     Universe.prototype._createTerrain = function() {
       var cx, cy, h, w;
 
-      w = 20 / 2;
+      w = this.__terrain_width / 2;
       h = 10 / 2;
       cx = 0;
       cy = h;

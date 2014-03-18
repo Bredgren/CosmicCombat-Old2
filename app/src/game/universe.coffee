@@ -10,6 +10,8 @@ class Universe
   _debug_draw: false
   _debug_drawer: null
 
+  __terrain_width: 100
+
   db_draw_flags:
     aabb: b2DebugDraw.e_aabbBit
     center: b2DebugDraw.e_centerOfMassBit
@@ -52,8 +54,21 @@ class Universe
 
   update: () ->
     c.update() for c in @characters
+    @_wrapObjects()
     @world.Step(settings.BOX2D_TIME_STEP, settings.BOX2D_VI, settings.BOX2D_PI)
     @world.ClearForces()
+
+
+  _wrapObjects: () ->
+    body = @world.GetBodyList()
+    while body
+      pos = body.GetPosition()
+      offset = @__terrain_width / 2
+      if pos.x + offset < 0
+        pos.x = @__terrain_width + pos.x
+      pos.x = ((pos.x + offset) % @__terrain_width) - offset
+      body.SetPosition(pos)
+      body = body.GetNext()
 
   draw: () ->
     c.draw() for c in @characters
@@ -91,7 +106,7 @@ class Universe
     return character
 
   _createTerrain: () ->
-    w = 20 / 2
+    w = @__terrain_width / 2
     h = 10 / 2
     cx = 0
     cy = h

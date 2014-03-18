@@ -53,6 +53,9 @@ class BaseCharacter
   position: () ->
     return @body.GetPosition()
 
+  setPosition: (pos) ->
+    @body.SetPosition(pos)
+
   size: () ->
 
   onGround: () ->
