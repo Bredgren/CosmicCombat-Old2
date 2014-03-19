@@ -208,21 +208,33 @@ class Game
 
   onKeyDown: (key_code) ->
     if @_controlled_char
-      if key_code == 65 # A
-        @_controlled_char.startMoveLeft()
-      else if key_code == 68 # B
-        @_controlled_char.startMoveRight()
-      else if key_code == 87 # W
-        @_controlled_char.startJump()
+      switch key_code
+        when settings.BINDINGS.LEFT
+          @_controlled_char.startMoveLeft()
+        when settings.BINDINGS.RIGHT
+          @_controlled_char.startMoveRight()
+        when settings.BINDINGS.UP
+          @_controlled_char.startJump()
+        # when settings.BINDINGS.DOWN
+        when settings.BINDINGS.POWER_UP
+          @_controlled_char.startPowerUp()
+        when settings.BINDINGS.POWER_DOWN
+          @_controlled_char.startPowerDown()
 
   onKeyUp: (key_code) ->
     if @_controlled_char
-      if key_code == 65
-        @_controlled_char.endMoveLeft()
-      else if key_code == 68
-        @_controlled_char.endMoveRight()
-      else if key_code == 87
-        @_controlled_char.endJump()
+      switch key_code
+        when settings.BINDINGS.LEFT
+          @_controlled_char.endMoveLeft()
+        when settings.BINDINGS.RIGHT
+          @_controlled_char.endMoveRight()
+        when settings.BINDINGS.UP
+          @_controlled_char.endJump()
+        # when settings.BINDINGS.DOWN
+        when settings.BINDINGS.POWER_UP
+          @_controlled_char.endPowerUp()
+        when settings.BINDINGS.POWER_DOWN
+          @_controlled_char.endPowerDown()
 
   onMouseDown: (screen_pos) ->
     @_mouse_down = true

@@ -15,7 +15,15 @@
     PPM: 30,
     BOX2D_TIME_STEP: 1 / 60,
     BOX2D_VI: 10,
-    BOX2D_PI: 10
+    BOX2D_PI: 10,
+    BINDINGS: {
+      LEFT: 65,
+      RIGHT: 68,
+      UP: 87,
+      DOWN: 83,
+      POWER_UP: 69,
+      POWER_DOWN: 81
+    }
   };
 
   settings.ENERGY_BAR = {
@@ -324,6 +332,8 @@
 
     BaseCharacter.prototype.improve_rate = 0.1;
 
+    BaseCharacter.prototype.power_up_rate = 0.01;
+
     BaseCharacter.prototype._stage = null;
 
     BaseCharacter.prototype._w = 0;
@@ -347,13 +357,17 @@
 
     BaseCharacter.prototype._jump_str = 25;
 
+    BaseCharacter.prototype._jump_cost_ratio = 0.1;
+
     BaseCharacter.prototype._max_vel = 15;
+
+    BaseCharacter.prototype._power_up = 0;
 
     function BaseCharacter(universe, init_pos, type, click_callback) {
       this.universe = universe;
       this._stage = this.universe.game.game_stage;
       this._move_direction = new b2Vec2(0, 0);
-      this.energy = new Energy(1000);
+      this.energy = new Energy(100);
     }
 
     BaseCharacter.prototype.update = function() {
@@ -367,14 +381,15 @@
       if (this._jumping && this.onGround()) {
         imp = new b2Vec2(0, -this._jump_str);
         this.body.ApplyImpulse(imp, pos);
-        this.energy.decCurrent(this._jump_str * 0.1);
+        this.energy.decCurrent(this._jump_str * this._jump_cost_ratio);
       }
       if (Math.abs(vel.x) > this._max_vel) {
         vel.x = (vel.x > 0 ? 1 : -1) * this._max_vel;
         this.body.SetLinearVelocity(vel);
       }
       this.body.SetAwake(true);
-      return this._recover();
+      this._recover();
+      return this.energy.incStrength(this._power_up * this.energy.max());
     };
 
     BaseCharacter.prototype.draw = function() {};
@@ -450,6 +465,22 @@
         this._move_direction.x = 0;
         return this._stopMoveX();
       }
+    };
+
+    BaseCharacter.prototype.startPowerUp = function() {
+      return this._power_up = this.power_up_rate;
+    };
+
+    BaseCharacter.prototype.endPowerUp = function() {
+      return this._power_up = 0;
+    };
+
+    BaseCharacter.prototype.startPowerDown = function() {
+      return this._power_up = -this.power_up_rate;
+    };
+
+    BaseCharacter.prototype.endPowerDown = function() {
+      return this._power_up = 0;
     };
 
     BaseCharacter.prototype._stopMoveX = function() {
@@ -1174,24 +1205,34 @@
 
     Game.prototype.onKeyDown = function(key_code) {
       if (this._controlled_char) {
-        if (key_code === 65) {
-          return this._controlled_char.startMoveLeft();
-        } else if (key_code === 68) {
-          return this._controlled_char.startMoveRight();
-        } else if (key_code === 87) {
-          return this._controlled_char.startJump();
+        switch (key_code) {
+          case settings.BINDINGS.LEFT:
+            return this._controlled_char.startMoveLeft();
+          case settings.BINDINGS.RIGHT:
+            return this._controlled_char.startMoveRight();
+          case settings.BINDINGS.UP:
+            return this._controlled_char.startJump();
+          case settings.BINDINGS.POWER_UP:
+            return this._controlled_char.startPowerUp();
+          case settings.BINDINGS.POWER_DOWN:
+            return this._controlled_char.startPowerDown();
         }
       }
     };
 
     Game.prototype.onKeyUp = function(key_code) {
       if (this._controlled_char) {
-        if (key_code === 65) {
-          return this._controlled_char.endMoveLeft();
-        } else if (key_code === 68) {
-          return this._controlled_char.endMoveRight();
-        } else if (key_code === 87) {
-          return this._controlled_char.endJump();
+        switch (key_code) {
+          case settings.BINDINGS.LEFT:
+            return this._controlled_char.endMoveLeft();
+          case settings.BINDINGS.RIGHT:
+            return this._controlled_char.endMoveRight();
+          case settings.BINDINGS.UP:
+            return this._controlled_char.endJump();
+          case settings.BINDINGS.POWER_UP:
+            return this._controlled_char.endPowerUp();
+          case settings.BINDINGS.POWER_DOWN:
+            return this._controlled_char.endPowerDown();
         }
       }
     };

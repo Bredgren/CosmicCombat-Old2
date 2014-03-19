@@ -8,6 +8,7 @@ class BaseCharacter
   energy: null
   recover_rate: 0.0005  # percent of max
   improve_rate: 0.1  # percent of amount recovered
+  power_up_rate: 0.01
 
   _stage: null
 
@@ -24,13 +25,15 @@ class BaseCharacter
     down: false
   _jumping: false
   _jump_str: 25
+  _jump_cost_ratio: 0.1
   _max_vel: 15
+  _power_up: 0
 
   # init_pos [b2Vec2]
   constructor: (@universe, init_pos, type, click_callback) ->
     @_stage = @universe.game.game_stage
     @_move_direction = new b2Vec2(0, 0)
-    @energy = new Energy(1000)
+    @energy = new Energy(100)
 
   update: () ->
     vel = @body.GetLinearVelocity()
@@ -43,7 +46,7 @@ class BaseCharacter
     if @_jumping and @onGround()
       imp = new b2Vec2(0, -@_jump_str)
       @body.ApplyImpulse(imp, pos)
-      @energy.decCurrent(@_jump_str * 0.1)
+      @energy.decCurrent(@_jump_str * @_jump_cost_ratio)
 
     if (Math.abs(vel.x) > @_max_vel)
       vel.x = (if vel.x > 0 then 1 else -1) * @_max_vel
@@ -52,6 +55,7 @@ class BaseCharacter
     @body.SetAwake(true)
 
     @_recover()
+    @energy.incStrength(@_power_up * @energy.max())
 
   draw: () ->
 
@@ -110,6 +114,18 @@ class BaseCharacter
     else
       @_move_direction.x = 0
       @_stopMoveX()
+
+  startPowerUp: () ->
+    @_power_up = @power_up_rate
+
+  endPowerUp: () ->
+    @_power_up = 0
+
+  startPowerDown: () ->
+    @_power_up = -@power_up_rate
+
+  endPowerDown: () ->
+    @_power_up = 0
 
   _stopMoveX: () ->
     vel = @body.GetLinearVelocity()

@@ -10,6 +10,14 @@ settings = {
   BOX2D_TIME_STEP: 1 / 60
   BOX2D_VI: 10  # Velocity iterations
   BOX2D_PI: 10  # Position iterations
+
+  BINDINGS:
+    LEFT:  65 # A
+    RIGHT: 68 # D
+    UP:    87 # W
+    DOWN:  83 # S
+    POWER_UP:   69 # E
+    POWER_DOWN: 81 # Q
 }
 
 settings.ENERGY_BAR =
