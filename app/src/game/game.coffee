@@ -15,6 +15,10 @@ class Game
 
   _controlled_char: null
 
+  _max_text: null
+  _current_text: null
+  _strength_text: null
+
   _dev:
     enabled: false  # whether dev-mode is enabled
     text: null  # PIXI text object for the "Dev-Mode" text
@@ -75,6 +79,14 @@ class Game
     @_dev.select_text = new PIXI.Text("Selected", style)
     @_dev.control_text = new PIXI.Text("Controlled", style)
 
+    style = {font: "#{settings.ENERGY_BAR.text.size}px Arial", fill: "#FFFFFF"}
+    @_max_text = new PIXI.Text("0", style)
+    @stage.addChild(@_max_text)
+    @_current_text = new PIXI.Text("0", style)
+    @stage.addChild(@_current_text)
+    @_strength_text = new PIXI.Text("0", style)
+    @stage.addChild(@_strength_text)
+
     if settings.DEBUG
       @toggleDevMode()
 
@@ -103,6 +115,9 @@ class Game
         w = @_dev.control_text.width
         @_dev.control_text.position.x = Math.round(pos.x - w / 2)
         @_dev.control_text.position.y = Math.round(pos.y - size.h / 2 - 10)
+        @_dev.con_energy_gui.max = @_controlled_char.energy.max()
+        @_dev.con_energy_gui.current = @_controlled_char.energy.current()
+        @_dev.con_energy_gui.strength = @_controlled_char.energy.strength()
       else
         @_dev.control_text.position.x = -100
         @_dev.control_text.position.y = 0
@@ -127,6 +142,11 @@ class Game
     @hud_graphics.drawRect(max_bar.x, max_bar.y, max_bar.width, max_bar.height)
     @hud_graphics.endFill()
 
+    pad = settings.ENERGY_BAR.text.pad
+    @_max_text.setText("" + Math.round(energy.max()))
+    @_max_text.position.x = max_bar.x + max_bar.width - @_max_text.width - pad
+    @_max_text.position.y = max_bar.y + pad
+
     @hud_graphics.lineStyle(1, 0x00BB00)
     @hud_graphics.beginFill(0x00FF00)
     @hud_graphics.fillAlpha = 0.4
@@ -137,6 +157,10 @@ class Game
     @hud_graphics.drawRect(max_bar.x, max_bar.y, width, max_bar.height)
     @hud_graphics.endFill()
 
+    @_current_text.setText("" + Math.round(energy.current()))
+    @_current_text.position.x = max_bar.x + width - @_current_text.width - pad
+    @_current_text.position.y = @_max_text.position.y + @_max_text.height + pad
+
     @hud_graphics.lineStyle(1, 0x0000BB)
     @hud_graphics.beginFill(0x0000FF)
     @hud_graphics.fillAlpha = 0.4
@@ -146,6 +170,11 @@ class Game
       width = Math.max((energy.strength() / energy.max()) * max_bar.width, 1)
     @hud_graphics.drawRect(max_bar.x, max_bar.y, width, max_bar.height)
     @hud_graphics.endFill()
+
+    @_strength_text.setText("" + Math.round(energy.strength()))
+    @_strength_text.position.x = max_bar.x + width - @_strength_text.width - pad
+    @_strength_text.position.y =
+      @_current_text.position.y + @_current_text.height + pad
 
   _onCharacterClick: (character, mousedata) =>
     if @_dev.enabled
@@ -555,15 +584,15 @@ class Game
       gui.max_gui.updateDisplay()
       updateCurrent(value)
 
-    gui.max_gui = f.add(gui, 'max')
+    gui.max_gui = f.add(gui, 'max').listen()
     gui.max_gui.onChange((value) ->
       energy.setMax(value)
       updateMax())
-    gui.current_gui = f.add(gui, 'current')
+    gui.current_gui = f.add(gui, 'current').listen()
     gui.current_gui.onChange((value) ->
       energy.setCurrent(value)
       updateCurrent())
-    gui.strength_gui = f.add(gui, 'strength')
+    gui.strength_gui = f.add(gui, 'strength').listen()
     gui.strength_gui.onChange((value) ->
       energy.setStrength(value)
       updateStrength())

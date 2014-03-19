@@ -13,7 +13,10 @@ settings = {
 }
 
 settings.ENERGY_BAR =
+  text:
+    size: 8
+    pad: 1
   width: settings.WIDTH * 0.6
-  height: settings.WIDTH * 0.6 * 0.05
+  height: settings.WIDTH * 0.6 * 0.06
   x: settings.WIDTH / 2 -  settings.WIDTH * 0.6 / 2
   y: 15

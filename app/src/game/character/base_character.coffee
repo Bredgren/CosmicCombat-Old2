@@ -6,6 +6,8 @@
 class BaseCharacter
   body: null
   energy: null
+  recover_rate: 0.0005  # percent of max
+  improve_rate: 0.1  # percent of amount recovered
 
   _stage: null
 
@@ -47,6 +49,8 @@ class BaseCharacter
       @body.SetLinearVelocity(vel)
 
     @body.SetAwake(true)
+
+    @_recover()
 
   draw: () ->
 
@@ -120,3 +124,12 @@ class BaseCharacter
       sprite.scale.x = 1
     else if @_move_direction.x < 0
       sprite.scale.x = -1
+
+  _recover: () ->
+    max = @energy.max()
+
+    recover_amount = @recover_rate * max
+    recovered_amount = @energy.incCurrent(recover_amount)
+
+    improve_amount = @improve_rate * recovered_amount
+    @energy.incMax(improve_amount)

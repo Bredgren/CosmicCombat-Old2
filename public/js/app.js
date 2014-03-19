@@ -19,8 +19,12 @@
   };
 
   settings.ENERGY_BAR = {
+    text: {
+      size: 8,
+      pad: 1
+    },
     width: settings.WIDTH * 0.6,
-    height: settings.WIDTH * 0.6 * 0.05,
+    height: settings.WIDTH * 0.6 * 0.06,
     x: settings.WIDTH / 2 - settings.WIDTH * 0.6 / 2,
     y: 15
   };
@@ -316,6 +320,10 @@
 
     BaseCharacter.prototype.energy = null;
 
+    BaseCharacter.prototype.recover_rate = 0.0005;
+
+    BaseCharacter.prototype.improve_rate = 0.1;
+
     BaseCharacter.prototype._stage = null;
 
     BaseCharacter.prototype._w = 0;
@@ -364,7 +372,8 @@
         vel.x = (vel.x > 0 ? 1 : -1) * this._max_vel;
         this.body.SetLinearVelocity(vel);
       }
-      return this.body.SetAwake(true);
+      this.body.SetAwake(true);
+      return this._recover();
     };
 
     BaseCharacter.prototype.draw = function() {};
@@ -461,6 +470,16 @@
       } else if (this._move_direction.x < 0) {
         return sprite.scale.x = -1;
       }
+    };
+
+    BaseCharacter.prototype._recover = function() {
+      var improve_amount, max, recover_amount, recovered_amount;
+
+      max = this.energy.max();
+      recover_amount = this.recover_rate * max;
+      recovered_amount = this.energy.incCurrent(recover_amount);
+      improve_amount = this.improve_rate * recovered_amount;
+      return this.energy.incMax(improve_amount);
     };
 
     return BaseCharacter;
@@ -921,6 +940,12 @@
 
     Game.prototype._controlled_char = null;
 
+    Game.prototype._max_text = null;
+
+    Game.prototype._current_text = null;
+
+    Game.prototype._strength_text = null;
+
     Game.prototype._dev = {
       enabled: false,
       text: null,
@@ -990,6 +1015,16 @@
       this._dev.new_text = new PIXI.Text("Click to spawn Character", style);
       this._dev.select_text = new PIXI.Text("Selected", style);
       this._dev.control_text = new PIXI.Text("Controlled", style);
+      style = {
+        font: "" + settings.ENERGY_BAR.text.size + "px Arial",
+        fill: "#FFFFFF"
+      };
+      this._max_text = new PIXI.Text("0", style);
+      this.stage.addChild(this._max_text);
+      this._current_text = new PIXI.Text("0", style);
+      this.stage.addChild(this._current_text);
+      this._strength_text = new PIXI.Text("0", style);
+      this.stage.addChild(this._strength_text);
       if (settings.DEBUG) {
         this.toggleDevMode();
       }
@@ -1022,7 +1057,10 @@
           size = this._controlled_char.size();
           w = this._dev.control_text.width;
           this._dev.control_text.position.x = Math.round(pos.x - w / 2);
-          return this._dev.control_text.position.y = Math.round(pos.y - size.h / 2 - 10);
+          this._dev.control_text.position.y = Math.round(pos.y - size.h / 2 - 10);
+          this._dev.con_energy_gui.max = this._controlled_char.energy.max();
+          this._dev.con_energy_gui.current = this._controlled_char.energy.current();
+          return this._dev.con_energy_gui.strength = this._controlled_char.energy.strength();
         } else {
           this._dev.control_text.position.x = -100;
           return this._dev.control_text.position.y = 0;
@@ -1041,7 +1079,7 @@
     };
 
     Game.prototype._drawEnergyBar = function() {
-      var energy, max_bar, width;
+      var energy, max_bar, pad, width;
 
       if (!this._controlled_char) {
         return;
@@ -1053,6 +1091,10 @@
       max_bar = settings.ENERGY_BAR;
       this.hud_graphics.drawRect(max_bar.x, max_bar.y, max_bar.width, max_bar.height);
       this.hud_graphics.endFill();
+      pad = settings.ENERGY_BAR.text.pad;
+      this._max_text.setText("" + Math.round(energy.max()));
+      this._max_text.position.x = max_bar.x + max_bar.width - this._max_text.width - pad;
+      this._max_text.position.y = max_bar.y + pad;
       this.hud_graphics.lineStyle(1, 0x00BB00);
       this.hud_graphics.beginFill(0x00FF00);
       this.hud_graphics.fillAlpha = 0.4;
@@ -1063,6 +1105,9 @@
       }
       this.hud_graphics.drawRect(max_bar.x, max_bar.y, width, max_bar.height);
       this.hud_graphics.endFill();
+      this._current_text.setText("" + Math.round(energy.current()));
+      this._current_text.position.x = max_bar.x + width - this._current_text.width - pad;
+      this._current_text.position.y = this._max_text.position.y + this._max_text.height + pad;
       this.hud_graphics.lineStyle(1, 0x0000BB);
       this.hud_graphics.beginFill(0x0000FF);
       this.hud_graphics.fillAlpha = 0.4;
@@ -1072,7 +1117,10 @@
         width = Math.max((energy.strength() / energy.max()) * max_bar.width, 1);
       }
       this.hud_graphics.drawRect(max_bar.x, max_bar.y, width, max_bar.height);
-      return this.hud_graphics.endFill();
+      this.hud_graphics.endFill();
+      this._strength_text.setText("" + Math.round(energy.strength()));
+      this._strength_text.position.x = max_bar.x + width - this._strength_text.width - pad;
+      return this._strength_text.position.y = this._current_text.position.y + this._current_text.height + pad;
     };
 
     Game.prototype._onCharacterClick = function(character, mousedata) {
@@ -1598,17 +1646,17 @@
         gui.max_gui.updateDisplay();
         return updateCurrent(value);
       };
-      gui.max_gui = f.add(gui, 'max');
+      gui.max_gui = f.add(gui, 'max').listen();
       gui.max_gui.onChange(function(value) {
         energy.setMax(value);
         return updateMax();
       });
-      gui.current_gui = f.add(gui, 'current');
+      gui.current_gui = f.add(gui, 'current').listen();
       gui.current_gui.onChange(function(value) {
         energy.setCurrent(value);
         return updateCurrent();
       });
-      gui.strength_gui = f.add(gui, 'strength');
+      gui.strength_gui = f.add(gui, 'strength').listen();
       gui.strength_gui.onChange(function(value) {
         energy.setStrength(value);
         return updateStrength();
