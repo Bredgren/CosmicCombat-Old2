@@ -43,6 +43,7 @@ class BaseCharacter
     if @_jumping and @onGround()
       imp = new b2Vec2(0, -@_jump_str)
       @body.ApplyImpulse(imp, pos)
+      @energy.decCurrent(@_jump_str * 0.1)
 
     if (Math.abs(vel.x) > @_max_vel)
       vel.x = (if vel.x > 0 then 1 else -1) * @_max_vel

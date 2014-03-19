@@ -367,6 +367,7 @@
       if (this._jumping && this.onGround()) {
         imp = new b2Vec2(0, -this._jump_str);
         this.body.ApplyImpulse(imp, pos);
+        this.energy.decCurrent(this._jump_str * 0.1);
       }
       if (Math.abs(vel.x) > this._max_vel) {
         vel.x = (vel.x > 0 ? 1 : -1) * this._max_vel;
