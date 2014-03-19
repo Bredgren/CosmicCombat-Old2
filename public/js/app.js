@@ -455,7 +455,12 @@
 
       pos = this.universe.getDrawingPosWrapped(this.body.GetPosition());
       sprite.position.x = pos.x;
-      return sprite.position.y = pos.y;
+      sprite.position.y = pos.y;
+      if (this._move_direction.x > 0) {
+        return sprite.scale.x = 1;
+      } else if (this._move_direction.x < 0) {
+        return sprite.scale.x = -1;
+      }
     };
 
     return BaseCharacter;

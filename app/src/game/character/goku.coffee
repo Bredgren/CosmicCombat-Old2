@@ -50,11 +50,6 @@ class Goku extends BaseCharacter
 
   draw: () ->
     @_positionSprite(@stand)
-    # pos = @body.GetPosition()
-    # pos = {x: pos.x, y: (pos.y + @_offset)}
-    # pos = @universe.game.camera.worldToScreen(pos)
-    # @stand.position.x = pos.x
-    # @stand.position.y = pos.y
 
   size: () ->
     return {w: @stand.width, h: @stand.height}
