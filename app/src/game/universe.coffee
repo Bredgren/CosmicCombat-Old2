@@ -1,6 +1,7 @@
 
 #_require ../config
 #_require ../global
+#_require ../util
 #_require ./debug_draw
 #_require ./character/characters
 
@@ -62,7 +63,7 @@ class Universe
   _wrapObjects: () ->
     body = @world.GetBodyList()
     while body
-      new_pos = @boundedPoint(body.GetPosition(), @getBounds())
+      new_pos = @boundedPoint(body.GetPosition())
       body.SetPosition(new b2Vec2(new_pos.x, new_pos.y))
       body = body.GetNext()
 
@@ -71,23 +72,55 @@ class Universe
     if @_debug_draw
       @world.DrawDebugData()
 
+  # Takes a point in world space where you would like to draw something and
+  # returns the point on screen that it should be drawn at. This takes into
+  # account the wrapping by returning the position that is within the screen.
+  # If no position is in the screen or more than one is then it returns the
+  # position that cooresponds to being with the bounds from @getBounds().
+  # Optionally you may provide a custom set of bounds.
+  getDrawingPosWrapped: (pos, bounds) ->
+    screen_pos = @camera.worldToScreen(pos)
+    if @camera.onScreen(screen_pos)
+      return screen_pos
+
+    if not bounds
+      bounds = @getBounds()
+
+    min_x = bounds.x - bounds.w / 2
+    max_x = min_x + bounds.w * 2
+    min_y = bounds.y - bounds.h / 2
+    max_y = min_y + bounds.h * 2
+
+    alt_x = boundedValue(pos.x + bounds.w, min_x, max_x)
+    alt_y = boundedValue(pos.y + bounds.h, min_y, max_y)
+
+    # Check all three cases
+    alt_pos = [{x: alt_x, y: pos.y}, {x: pos.y, y: alt_y}, {x: alt_x, y: alt_y}]
+    for pos in alt_pos
+      screen_alt_pos = @camera.worldToScreen(pos)
+      if @camera.onScreen(screen_alt_pos)
+        return screen_alt_pos
+
+    return screen_pos
+
   getBounds: () ->
     return {
       x: -@__terrain_width / 2
       y: -@__terrain_width
       w: @__terrain_width
       h: @__terrain_width + 10
-      }
+    }
 
   # Takes a point [{x, y}] and returns a new point whose values are wrapped
-  # Astroids-style within the space specified by getBounds().
+  # Astroids-style within the space specified by the given bounds or getBounds()
   boundedPoint: (point, bounds) ->
-    x = point.x - bounds.x
-    if x < 0
-      x = (bounds.x + bounds.w) + x
-    else
-      x = (x % bounds.w) + bounds.x
-    return {x: x, y: point.y}
+    if not bounds
+      bounds = @getBounds()
+
+    x = boundedValue(point.x, bounds.x, bounds.x + bounds.w)
+    y = boundedValue(point.y, bounds.y, bounds.y + bounds.h)
+
+    return {x: x, y: y}
 
   toggleDebugDraw: () ->
     @_debug_draw = not @_debug_draw

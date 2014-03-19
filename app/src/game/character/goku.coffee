@@ -15,6 +15,15 @@ class Goku extends BaseCharacter
     @stand.click = (mousedata) =>
       click_callback(@, mousedata)
 
+    # @stand_copy = PIXI.Sprite.fromFrame("goku_stand_01")
+    # @stand_copy.anchor.x = .5
+    # @stand_copy.anchor.y = .5
+    # @_stage.addChild(@stand_copy)
+
+    # @stand_copy.setInteractive(true)
+    # @stand_copy.click = (mousedata) =>
+    #   click_callback(@, mousedata)
+
     @_w = .3
     @_h = .4
     @_offset = 0
@@ -40,11 +49,12 @@ class Goku extends BaseCharacter
     super()
 
   draw: () ->
-    pos = @body.GetPosition()
-    pos = {x: pos.x, y: (pos.y + @_offset)}
-    pos = @universe.game.camera.worldToScreen(pos)
-    @stand.position.x = pos.x
-    @stand.position.y = pos.y
+    @_positionSprite(@stand)
+    # pos = @body.GetPosition()
+    # pos = {x: pos.x, y: (pos.y + @_offset)}
+    # pos = @universe.game.camera.worldToScreen(pos)
+    # @stand.position.x = pos.x
+    # @stand.position.y = pos.y
 
   size: () ->
     return {w: @stand.width, h: @stand.height}

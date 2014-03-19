@@ -34,5 +34,9 @@ class Camera
       y: point.y * settings.PPM
     }
 
+  # Checks if the given point (screen coords) is visible on the screen
+  onScreen: (point) ->
+    return 0 <= point.x <= settings.WIDTH and 0 <= point.y <= settings.HEIGHT
+
   copy: () ->
     return new Camera(@x, @y, @w, @h, @zoom)

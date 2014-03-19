@@ -110,3 +110,25 @@ class BaseCharacter
     vel = @body.GetLinearVelocity()
     vel.x = 0
     @body.SetLinearVelocity(vel)
+
+  _positionSprite: (sprite) ->
+    # TODO: Look at both possible position and chose the visible one, favoring
+    # the one within the actual bounds if both are visible.
+    # pos = @body.GetPosition()
+    # pos = {x: pos.x, y: (pos.y + @_offset)}
+
+    # world_bounds = @universe.getBounds()
+    # copy_pos = {x: pos.x + world_bounds.w, y: pos.y}
+    # copy_bounds = {x: world_bounds.x - world_bounds.w / 2, y: world_bounds.y,
+    # w: world_bounds.w * 2, h: world_bounds.h}
+    # copy_pos = @universe.boundedPoint(copy_pos, copy_bounds)
+
+    # pos = @universe.game.camera.worldToScreen(pos)
+    # copy_pos = @universe.game.camera.worldToScreen(copy_pos)
+
+    pos = @universe.getDrawingPosWrapped(@body.GetPosition())
+    sprite.position.x = pos.x
+    sprite.position.y = pos.y
+
+    # sprite_copy.position.x = copy_pos.x
+    # sprite_copy.position.y = copy_pos.y
