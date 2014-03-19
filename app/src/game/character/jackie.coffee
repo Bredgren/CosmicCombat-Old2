@@ -2,6 +2,8 @@
 #_require ./base_character
 
 class Jackie extends BaseCharacter
+  recover_rate: 0.0006
+  improve_rate: 0.05
   constructor: (universe, init_pos, click_callback) ->
     super(universe, init_pos, click_callback)
     @stand = PIXI.Sprite.fromFrame("jackie_stand_01")

@@ -106,6 +106,9 @@ class Game
         w = @_dev.select_text.width
         @_dev.select_text.position.x = Math.round(pos.x - w / 2)
         @_dev.select_text.position.y = Math.round(pos.y - size.h / 2 - 10)
+        @_dev.cur_energy_gui.max = @_dev.selected_char.energy.max()
+        @_dev.cur_energy_gui.current = @_dev.selected_char.energy.current()
+        @_dev.cur_energy_gui.strength = @_dev.selected_char.energy.strength()
       else
         @_dev.select_text.position.x = -100
         @_dev.select_text.position.y = 0

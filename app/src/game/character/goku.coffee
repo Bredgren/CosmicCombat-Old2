@@ -2,6 +2,8 @@
 #_require ./base_character
 
 class Goku extends BaseCharacter
+  recover_rate: 0.0006
+  improve_rate: 0.2
   constructor: (universe, init_pos, click_callback) ->
     super(universe, init_pos, click_callback)
     @_jump_str = 15
@@ -14,15 +16,6 @@ class Goku extends BaseCharacter
     @stand.setInteractive(true)
     @stand.click = (mousedata) =>
       click_callback(@, mousedata)
-
-    # @stand_copy = PIXI.Sprite.fromFrame("goku_stand_01")
-    # @stand_copy.anchor.x = .5
-    # @stand_copy.anchor.y = .5
-    # @_stage.addChild(@stand_copy)
-
-    # @stand_copy.setInteractive(true)
-    # @stand_copy.click = (mousedata) =>
-    #   click_callback(@, mousedata)
 
     @_w = .3
     @_h = .4

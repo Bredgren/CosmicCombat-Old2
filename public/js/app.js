@@ -489,6 +489,10 @@
   Jackie = (function(_super) {
     __extends(Jackie, _super);
 
+    Jackie.prototype.recover_rate = 0.0006;
+
+    Jackie.prototype.improve_rate = 0.05;
+
     function Jackie(universe, init_pos, click_callback) {
       var bodyDef, box, circle,
         _this = this;
@@ -541,6 +545,10 @@
 
   Goku = (function(_super) {
     __extends(Goku, _super);
+
+    Goku.prototype.recover_rate = 0.0006;
+
+    Goku.prototype.improve_rate = 0.2;
 
     function Goku(universe, init_pos, click_callback) {
       var bodyDef, box, circle,
@@ -1048,6 +1056,9 @@
           w = this._dev.select_text.width;
           this._dev.select_text.position.x = Math.round(pos.x - w / 2);
           this._dev.select_text.position.y = Math.round(pos.y - size.h / 2 - 10);
+          this._dev.cur_energy_gui.max = this._dev.selected_char.energy.max();
+          this._dev.cur_energy_gui.current = this._dev.selected_char.energy.current();
+          this._dev.cur_energy_gui.strength = this._dev.selected_char.energy.strength();
         } else {
           this._dev.select_text.position.x = -100;
           this._dev.select_text.position.y = 0;
