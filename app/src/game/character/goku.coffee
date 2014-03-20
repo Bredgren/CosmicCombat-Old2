@@ -2,7 +2,7 @@
 #_require ./base_character
 
 class Goku extends BaseCharacter
-  recover_rate: 0.0006
+  recover_rate: 0.0002
   improve_rate: 0.2
   constructor: (universe, init_pos, click_callback) ->
     super(universe, init_pos, click_callback)

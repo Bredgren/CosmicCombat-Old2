@@ -6,9 +6,10 @@
 class BaseCharacter
   body: null
   energy: null
-  recover_rate: 0.0005  # percent of max
+  recover_rate: 0.0002  # percent of max
   improve_rate: 0.1  # percent of amount recovered
-  power_up_rate: 0.01
+  power_up_rate: 0.001
+  power_down_rate: 0.004
 
   _stage: null
 
@@ -122,7 +123,7 @@ class BaseCharacter
     @_power_up = 0
 
   startPowerDown: () ->
-    @_power_up = -@power_up_rate
+    @_power_up = -@power_down_rate
 
   endPowerDown: () ->
     @_power_up = 0

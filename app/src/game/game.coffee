@@ -1,8 +1,9 @@
 
 #_require ../config
-#_require ./universe
 #_require ./camera
 #_require ./character/characters
+#_require ./starfield
+#_require ./universe
 
 class Game
   camera: null
@@ -12,6 +13,7 @@ class Game
   _universe: null
   _last_mouse_pos: {x: 0, y: 0}
   _mouse_down: false
+  _starfield: null
 
   _controlled_char: null
 
@@ -47,6 +49,8 @@ class Game
     @hud_stage = new PIXI.DisplayObjectContainer()
     @game_stage = new PIXI.DisplayObjectContainer()
     @debug_stage = new PIXI.DisplayObjectContainer()
+    @bg_stage = new PIXI.DisplayObjectContainer()
+    @stage.addChild(@bg_stage)
     @stage.addChild(@game_stage)
     @stage.addChild(@hud_stage)
     @stage.addChild(@debug_stage)
@@ -60,6 +64,9 @@ class Game
     @camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT)
     @_universe = new Universe(@, @debug_graphics, @camera)
     @_resetGui()
+
+    @_starfield = new StarField(@camera, @bg_stage, settings.STAR_COUNT,
+      settings.STAR_MIN_DEPTH, settings.STAR_MAX_DEPTH)
 
     @_dev.new_char_options =
       pos:
@@ -128,8 +135,10 @@ class Game
   clear: () ->
     @debug_graphics.clear()
     @hud_graphics.clear()
+    @_starfield.clear()
 
   draw: () ->
+    @_starfield.draw()
     @_universe.draw()
     @_drawEnergyBar()
 

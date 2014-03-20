@@ -2,7 +2,7 @@
 #_require ./base_character
 
 class Jackie extends BaseCharacter
-  recover_rate: 0.0006
+  recover_rate: 0.0003
   improve_rate: 0.05
   constructor: (universe, init_pos, click_callback) ->
     super(universe, init_pos, click_callback)

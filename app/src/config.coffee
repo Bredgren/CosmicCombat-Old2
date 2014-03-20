@@ -7,6 +7,10 @@ settings = {
   HEIGHT: 600
   PPM: 30  # pixels per meter
 
+  STAR_COUNT: 50
+  STAR_MIN_DEPTH: 0.01
+  STAR_MAX_DEPTH: 0
+
   BOX2D_TIME_STEP: 1 / 60
   BOX2D_VI: 10  # Velocity iterations
   BOX2D_PI: 10  # Position iterations
@@ -18,6 +22,12 @@ settings = {
     DOWN:  83 # S
     POWER_UP:   69 # E
     POWER_DOWN: 81 # Q
+    BLOCK: 32 # SPACE
+    PAUSE: 27 # ESC
+    INTERACT: 67 # C
+    #Items
+    #Physical Attacks
+    #Energy Attacks
 }
 
 settings.ENERGY_BAR =

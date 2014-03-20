@@ -76,7 +76,8 @@ class Universe
   # returns the point on screen that it should be drawn at. This takes into
   # account the wrapping by returning the position that is within the screen.
   # If no position is in the screen or more than one is then it returns the
-  # position that cooresponds to being with the bounds from @getBounds().
+  # position that is closest to the camera, which prevents disappearing and
+  # reappearing at the edges.
   # Optionally you may provide a custom set of bounds.
   getDrawingPosWrapped: (pos, bounds) ->
     screen_pos = @camera.worldToScreen(pos)
@@ -94,14 +95,19 @@ class Universe
     alt_x = boundedValue(pos.x + bounds.w, min_x, max_x)
     alt_y = boundedValue(pos.y + bounds.h, min_y, max_y)
 
-    # Check all three cases
-    alt_pos = [{x: alt_x, y: pos.y}, {x: pos.y, y: alt_y}, {x: alt_x, y: alt_y}]
+    # Check all cases
+    alt_pos = [{x: alt_x, y: pos.y}, {x: pos.x, y: alt_y}, {x: alt_x, y: alt_y},
+      pos]
+    screen_alt_pos = null
+    min_dist = null
     for pos in alt_pos
-      screen_alt_pos = @camera.worldToScreen(pos)
-      if @camera.onScreen(screen_alt_pos)
-        return screen_alt_pos
+      p = @camera.worldToScreen(pos)
+      dist = Math.abs(p.x - @camera.w / 2) +  Math.abs(p.y - @camera.h / 2)
+      if min_dist is null or dist < min_dist
+        screen_alt_pos = p
+        min_dist = dist
 
-    return screen_pos
+    return screen_alt_pos
 
   getBounds: () ->
     return {
