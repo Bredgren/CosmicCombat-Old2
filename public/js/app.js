@@ -279,6 +279,8 @@
 
     BaseCharacter.prototype._jump_cost_ratio = 0.1;
 
+    BaseCharacter.prototype._blocking = false;
+
     BaseCharacter.prototype._max_vel = 15;
 
     BaseCharacter.prototype._power_up = 0;
@@ -296,9 +298,11 @@
       energy_spent = 0;
       vel = this.body.GetLinearVelocity();
       pos = this.body.GetPosition();
-      force = this._move_direction.Copy();
-      force.Multiply(500);
-      this.body.ApplyForce(force, pos);
+      if (!this._blocking) {
+        force = this._move_direction.Copy();
+        force.Multiply(500);
+        this.body.ApplyForce(force, pos);
+      }
       jump_cost = this._jump_str * this._jump_cost_ratio;
       if (this._jumping && this.onGround() && this.energy.strength() > jump_cost) {
         imp = new b2Vec2(0, -this._jump_str);
@@ -314,11 +318,15 @@
         this.body.SetLinearVelocity(vel);
       }
       this.body.SetAwake(true);
-      if (this._flying && this.energy.strength() > this.fly_cost) {
-        anti_g = this.universe.world.GetGravity().Copy();
-        anti_g.Multiply(-this.body.GetMass());
-        this.body.ApplyForce(anti_g, pos);
-        energy_spent += this.fly_cost;
+      if (this._flying) {
+        if (this.energy.strength() > this.fly_cost) {
+          anti_g = this.universe.world.GetGravity().Copy();
+          anti_g.Multiply(-this.body.GetMass());
+          this.body.ApplyForce(anti_g, pos);
+          energy_spent += this.fly_cost;
+        } else {
+          this.endFly();
+        }
       }
       return this._updateEnergy(energy_spent);
     };
@@ -374,8 +382,7 @@
         if (this._directions.down) {
           return this._move_direction.y = 1;
         } else {
-          this._move_direction.y = 0;
-          return this._stopMoveY();
+          return this._move_direction.y = 0;
         }
       }
     };
@@ -393,14 +400,19 @@
         if (this._directions.up) {
           return this._move_direction.y = -1;
         } else {
-          this._move_direction.y = 0;
-          return this._stopMoveY();
+          return this._move_direction.y = 0;
         }
       }
     };
 
     BaseCharacter.prototype.startFly = function() {
-      return this._flying = true;
+      if (this.energy.strength() >= this.fly_cost) {
+        if (this._blocking) {
+          this._stopMoveX();
+          this._stopMoveY();
+        }
+        return this._flying = true;
+      }
     };
 
     BaseCharacter.prototype.endFly = function() {
@@ -419,8 +431,7 @@
       if (this._directions.left) {
         return this._move_direction.x = -1;
       } else {
-        this._move_direction.x = 0;
-        return this._stopMoveX();
+        return this._move_direction.x = 0;
       }
     };
 
@@ -435,8 +446,7 @@
       if (this._directions.right) {
         return this._move_direction.x = 1;
       } else {
-        this._move_direction.x = 0;
-        return this._stopMoveX();
+        return this._move_direction.x = 0;
       }
     };
 
@@ -454,6 +464,16 @@
 
     BaseCharacter.prototype.endPowerDown = function() {
       return this._power_up = 0;
+    };
+
+    BaseCharacter.prototype.startBlock = function() {
+      this._blocking = true;
+      this._stopMoveX();
+      return this._stopMoveY();
+    };
+
+    BaseCharacter.prototype.endBlock = function() {
+      return this._blocking = false;
     };
 
     BaseCharacter.prototype._stopMoveX = function() {
@@ -1377,6 +1397,8 @@
             return this._controlled_char.startPowerDown();
           case settings.BINDINGS.FLY:
             return this._controlled_char.startFly();
+          case settings.BINDINGS.BLOCK:
+            return this._controlled_char.startBlock();
         }
       }
     };
@@ -1398,6 +1420,8 @@
             return this._controlled_char.endPowerDown();
           case settings.BINDINGS.FLY:
             return this._controlled_char.endFly();
+          case settings.BINDINGS.BLOCK:
+            return this._controlled_char.endBlock();
         }
       }
     };

@@ -29,6 +29,7 @@ class BaseCharacter
   _jumping: false
   _jump_str: 25
   _jump_cost_ratio: 0.1
+  _blocking: false
   _max_vel: 15
   _power_up: 0
 
@@ -43,9 +44,10 @@ class BaseCharacter
     vel = @body.GetLinearVelocity()
     pos = @body.GetPosition()
 
-    force = @_move_direction.Copy()
-    force.Multiply(500)
-    @body.ApplyForce(force, pos)
+    if not @_blocking
+      force = @_move_direction.Copy()
+      force.Multiply(500)
+      @body.ApplyForce(force, pos)
 
     jump_cost = @_jump_str * @_jump_cost_ratio
     if @_jumping and @onGround() and @energy.strength() > jump_cost
@@ -63,11 +65,14 @@ class BaseCharacter
 
     @body.SetAwake(true)
 
-    if @_flying and @energy.strength() > @fly_cost
-      anti_g = @universe.world.GetGravity().Copy()
-      anti_g.Multiply(-@body.GetMass())
-      @body.ApplyForce(anti_g, pos)
-      energy_spent += @fly_cost
+    if @_flying
+      if @energy.strength() > @fly_cost
+        anti_g = @universe.world.GetGravity().Copy()
+        anti_g.Multiply(-@body.GetMass())
+        @body.ApplyForce(anti_g, pos)
+        energy_spent += @fly_cost
+      else
+        @endFly()
 
     @_updateEnergy(energy_spent)
 
@@ -112,7 +117,7 @@ class BaseCharacter
         @_move_direction.y = 1
       else
         @_move_direction.y = 0
-        @_stopMoveY()
+        # @_stopMoveY()
 
   startDown: () ->
     if @_flying
@@ -126,10 +131,14 @@ class BaseCharacter
         @_move_direction.y = -1
       else
         @_move_direction.y = 0
-        @_stopMoveY()
+        # @_stopMoveY()
 
   startFly: () ->
-    @_flying = true
+    if @energy.strength() >= @fly_cost
+      if @_blocking
+        @_stopMoveX()
+        @_stopMoveY()
+      @_flying = true
 
   endFly: () ->
     @endUp()
@@ -146,7 +155,7 @@ class BaseCharacter
       @_move_direction.x = -1
     else
       @_move_direction.x = 0
-      @_stopMoveX()
+      # @_stopMoveX()
 
   startMoveLeft: () ->
     @_directions.left = true
@@ -159,7 +168,7 @@ class BaseCharacter
       @_move_direction.x = 1
     else
       @_move_direction.x = 0
-      @_stopMoveX()
+      # @_stopMoveX()
 
   startPowerUp: () ->
     @_power_up = @power_up_rate
@@ -172,6 +181,14 @@ class BaseCharacter
 
   endPowerDown: () ->
     @_power_up = 0
+
+  startBlock: () ->
+    @_blocking = true
+    @_stopMoveX()
+    @_stopMoveY()
+
+  endBlock: () ->
+    @_blocking = false
 
   _stopMoveX: () ->
     vel = @body.GetLinearVelocity()

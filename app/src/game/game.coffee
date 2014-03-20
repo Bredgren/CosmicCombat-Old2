@@ -232,6 +232,8 @@ class Game
           @_controlled_char.startPowerDown()
         when settings.BINDINGS.FLY
           @_controlled_char.startFly()
+        when settings.BINDINGS.BLOCK
+          @_controlled_char.startBlock()
 
   onKeyUp: (key_code) ->
     if @_controlled_char
@@ -250,6 +252,8 @@ class Game
           @_controlled_char.endPowerDown()
         when settings.BINDINGS.FLY
           @_controlled_char.endFly()
+        when settings.BINDINGS.BLOCK
+          @_controlled_char.endBlock()
 
   onMouseDown: (screen_pos) ->
     @_mouse_down = true
