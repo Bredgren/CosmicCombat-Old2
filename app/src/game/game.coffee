@@ -223,12 +223,15 @@ class Game
         when settings.BINDINGS.RIGHT
           @_controlled_char.startMoveRight()
         when settings.BINDINGS.UP
-          @_controlled_char.startJump()
-        # when settings.BINDINGS.DOWN
+          @_controlled_char.startUp()
+        when settings.BINDINGS.DOWN
+          @_controlled_char.startDown()
         when settings.BINDINGS.POWER_UP
           @_controlled_char.startPowerUp()
         when settings.BINDINGS.POWER_DOWN
           @_controlled_char.startPowerDown()
+        when settings.BINDINGS.FLY
+          @_controlled_char.startFly()
 
   onKeyUp: (key_code) ->
     if @_controlled_char
@@ -238,12 +241,15 @@ class Game
         when settings.BINDINGS.RIGHT
           @_controlled_char.endMoveRight()
         when settings.BINDINGS.UP
-          @_controlled_char.endJump()
-        # when settings.BINDINGS.DOWN
+          @_controlled_char.endUp()
+        when settings.BINDINGS.DOWN
+          @_controlled_char.endDown()
         when settings.BINDINGS.POWER_UP
           @_controlled_char.endPowerUp()
         when settings.BINDINGS.POWER_DOWN
           @_controlled_char.endPowerDown()
+        when settings.BINDINGS.FLY
+          @_controlled_char.endFly()
 
   onMouseDown: (screen_pos) ->
     @_mouse_down = true

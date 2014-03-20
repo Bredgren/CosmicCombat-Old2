@@ -28,7 +28,8 @@
       POWER_DOWN: 81,
       BLOCK: 32,
       PAUSE: 27,
-      INTERACT: 67
+      INTERACT: 67,
+      FLY: 16
     }
   };
 
@@ -249,6 +250,8 @@
 
     BaseCharacter.prototype.power_down_rate = 0.004;
 
+    BaseCharacter.prototype.fly_cost = 10;
+
     BaseCharacter.prototype._stage = null;
 
     BaseCharacter.prototype._w = 0;
@@ -268,6 +271,8 @@
       down: false
     };
 
+    BaseCharacter.prototype._flying = false;
+
     BaseCharacter.prototype._jumping = false;
 
     BaseCharacter.prototype._jump_str = 25;
@@ -286,8 +291,9 @@
     }
 
     BaseCharacter.prototype.update = function() {
-      var force, imp, jump_cost, pos, vel;
+      var anti_g, energy_spent, force, imp, jump_cost, pos, vel;
 
+      energy_spent = 0;
       vel = this.body.GetLinearVelocity();
       pos = this.body.GetPosition();
       force = this._move_direction.Copy();
@@ -297,15 +303,24 @@
       if (this._jumping && this.onGround() && this.energy.strength() > jump_cost) {
         imp = new b2Vec2(0, -this._jump_str);
         this.body.ApplyImpulse(imp, pos);
-        this.energy.decCurrent(jump_cost);
+        energy_spent += jump_cost;
       }
       if (Math.abs(vel.x) > this._max_vel) {
         vel.x = (vel.x > 0 ? 1 : -1) * this._max_vel;
         this.body.SetLinearVelocity(vel);
       }
+      if (Math.abs(vel.y) > this._max_vel) {
+        vel.y = (vel.y > 0 ? 1 : -1) * this._max_vel;
+        this.body.SetLinearVelocity(vel);
+      }
       this.body.SetAwake(true);
-      this._recover();
-      return this.energy.incStrength(this._power_up * this.energy.max());
+      if (this._flying && this.energy.strength() > this.fly_cost) {
+        anti_g = this.universe.world.GetGravity().Copy();
+        anti_g.Multiply(-this.body.GetMass());
+        this.body.ApplyForce(anti_g, pos);
+        energy_spent += this.fly_cost;
+      }
+      return this._updateEnergy(energy_spent);
     };
 
     BaseCharacter.prototype.draw = function() {};
@@ -344,12 +359,54 @@
       return false;
     };
 
-    BaseCharacter.prototype.startJump = function() {
-      return this._jumping = true;
+    BaseCharacter.prototype.startUp = function() {
+      this._jumping = true;
+      if (this._flying) {
+        this._directions.up = true;
+        return this._move_direction.y = -1;
+      }
     };
 
-    BaseCharacter.prototype.endJump = function() {
-      return this._jumping = false;
+    BaseCharacter.prototype.endUp = function() {
+      this._jumping = false;
+      if (this._flying) {
+        this._directions.up = false;
+        if (this._directions.down) {
+          return this._move_direction.y = 1;
+        } else {
+          this._move_direction.y = 0;
+          return this._stopMoveY();
+        }
+      }
+    };
+
+    BaseCharacter.prototype.startDown = function() {
+      if (this._flying) {
+        this._directions.down = true;
+        return this._move_direction.y = 1;
+      }
+    };
+
+    BaseCharacter.prototype.endDown = function() {
+      if (this._flying) {
+        this._directions.down = false;
+        if (this._directions.up) {
+          return this._move_direction.y = -1;
+        } else {
+          this._move_direction.y = 0;
+          return this._stopMoveY();
+        }
+      }
+    };
+
+    BaseCharacter.prototype.startFly = function() {
+      return this._flying = true;
+    };
+
+    BaseCharacter.prototype.endFly = function() {
+      this.endUp();
+      this.endDown();
+      return this._flying = false;
     };
 
     BaseCharacter.prototype.startMoveRight = function() {
@@ -407,6 +464,14 @@
       return this.body.SetLinearVelocity(vel);
     };
 
+    BaseCharacter.prototype._stopMoveY = function() {
+      var vel;
+
+      vel = this.body.GetLinearVelocity();
+      vel.y = 0;
+      return this.body.SetLinearVelocity(vel);
+    };
+
     BaseCharacter.prototype._positionSprite = function(sprite) {
       var pos;
 
@@ -420,14 +485,15 @@
       }
     };
 
-    BaseCharacter.prototype._recover = function() {
+    BaseCharacter.prototype._updateEnergy = function(spent) {
       var improve_amount, max, recover_amount, recovered_amount;
 
       max = this.energy.max();
-      recover_amount = this.recover_rate * max;
+      recover_amount = this.recover_rate * max - spent;
       recovered_amount = this.energy.incCurrent(recover_amount);
       improve_amount = this.improve_rate * recovered_amount;
-      return this.energy.incMax(improve_amount);
+      this.energy.incMax(improve_amount);
+      return this.energy.incStrength(this._power_up * this.energy.max());
     };
 
     return BaseCharacter;
@@ -1302,11 +1368,15 @@
           case settings.BINDINGS.RIGHT:
             return this._controlled_char.startMoveRight();
           case settings.BINDINGS.UP:
-            return this._controlled_char.startJump();
+            return this._controlled_char.startUp();
+          case settings.BINDINGS.DOWN:
+            return this._controlled_char.startDown();
           case settings.BINDINGS.POWER_UP:
             return this._controlled_char.startPowerUp();
           case settings.BINDINGS.POWER_DOWN:
             return this._controlled_char.startPowerDown();
+          case settings.BINDINGS.FLY:
+            return this._controlled_char.startFly();
         }
       }
     };
@@ -1319,11 +1389,15 @@
           case settings.BINDINGS.RIGHT:
             return this._controlled_char.endMoveRight();
           case settings.BINDINGS.UP:
-            return this._controlled_char.endJump();
+            return this._controlled_char.endUp();
+          case settings.BINDINGS.DOWN:
+            return this._controlled_char.endDown();
           case settings.BINDINGS.POWER_UP:
             return this._controlled_char.endPowerUp();
           case settings.BINDINGS.POWER_DOWN:
             return this._controlled_char.endPowerDown();
+          case settings.BINDINGS.FLY:
+            return this._controlled_char.endFly();
         }
       }
     };

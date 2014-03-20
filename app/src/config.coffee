@@ -25,6 +25,7 @@ settings = {
     BLOCK: 32 # SPACE
     PAUSE: 27 # ESC
     INTERACT: 67 # C
+    FLY: 16 # SHIFT
     #Items
     #Physical Attacks
     #Energy Attacks

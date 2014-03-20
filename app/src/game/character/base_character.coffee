@@ -10,6 +10,7 @@ class BaseCharacter
   improve_rate: 0.1  # percent of amount recovered
   power_up_rate: 0.001
   power_down_rate: 0.004
+  fly_cost: 10
 
   _stage: null
 
@@ -24,6 +25,7 @@ class BaseCharacter
     right: false
     up: false
     down: false
+  _flying: false
   _jumping: false
   _jump_str: 25
   _jump_cost_ratio: 0.1
@@ -37,6 +39,7 @@ class BaseCharacter
     @energy = new Energy(100)
 
   update: () ->
+    energy_spent = 0
     vel = @body.GetLinearVelocity()
     pos = @body.GetPosition()
 
@@ -48,16 +51,25 @@ class BaseCharacter
     if @_jumping and @onGround() and @energy.strength() > jump_cost
       imp = new b2Vec2(0, -@_jump_str)
       @body.ApplyImpulse(imp, pos)
-      @energy.decCurrent(jump_cost)
+      energy_spent += jump_cost
 
     if (Math.abs(vel.x) > @_max_vel)
       vel.x = (if vel.x > 0 then 1 else -1) * @_max_vel
       @body.SetLinearVelocity(vel)
 
+    if (Math.abs(vel.y) > @_max_vel)
+      vel.y = (if vel.y > 0 then 1 else -1) * @_max_vel
+      @body.SetLinearVelocity(vel)
+
     @body.SetAwake(true)
 
-    @_recover()
-    @energy.incStrength(@_power_up * @energy.max())
+    if @_flying and @energy.strength() > @fly_cost
+      anti_g = @universe.world.GetGravity().Copy()
+      anti_g.Multiply(-@body.GetMass())
+      @body.ApplyForce(anti_g, pos)
+      energy_spent += @fly_cost
+
+    @_updateEnergy(energy_spent)
 
   draw: () ->
 
@@ -86,11 +98,43 @@ class BaseCharacter
       contact = contact.GetNext()
     return false
 
-  startJump: () ->
+  startUp: () ->
     @_jumping = true
+    if @_flying
+      @_directions.up = true
+      @_move_direction.y = -1
 
-  endJump: () ->
+  endUp: () ->
     @_jumping = false
+    if @_flying
+      @_directions.up = false
+      if @_directions.down
+        @_move_direction.y = 1
+      else
+        @_move_direction.y = 0
+        @_stopMoveY()
+
+  startDown: () ->
+    if @_flying
+      @_directions.down = true
+      @_move_direction.y = 1
+
+  endDown: () ->
+    if @_flying
+      @_directions.down = false
+      if @_directions.up
+        @_move_direction.y = -1
+      else
+        @_move_direction.y = 0
+        @_stopMoveY()
+
+  startFly: () ->
+    @_flying = true
+
+  endFly: () ->
+    @endUp()
+    @endDown()
+    @_flying = false
 
   startMoveRight: () ->
     @_directions.right = true
@@ -134,6 +178,11 @@ class BaseCharacter
     vel.x = 0
     @body.SetLinearVelocity(vel)
 
+  _stopMoveY: () ->
+    vel = @body.GetLinearVelocity()
+    vel.y = 0
+    @body.SetLinearVelocity(vel)
+
   _positionSprite: (sprite) ->
     pos = @universe.getDrawingPosWrapped(@body.GetPosition())
     sprite.position.x = pos.x
@@ -144,11 +193,15 @@ class BaseCharacter
     else if @_move_direction.x < 0
       sprite.scale.x = -1
 
-  _recover: () ->
+  # Recovers energy and increases the maximum if the amount spent is less
+  # than the amount you would recover.
+  _updateEnergy: (spent) ->
     max = @energy.max()
 
-    recover_amount = @recover_rate * max
+    recover_amount = @recover_rate * max - spent
     recovered_amount = @energy.incCurrent(recover_amount)
 
     improve_amount = @improve_rate * recovered_amount
     @energy.incMax(improve_amount)
+
+    @energy.incStrength(@_power_up * @energy.max())
