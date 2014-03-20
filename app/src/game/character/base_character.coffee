@@ -44,10 +44,11 @@ class BaseCharacter
     force.Multiply(500)
     @body.ApplyForce(force, pos)
 
-    if @_jumping and @onGround()
+    jump_cost = @_jump_str * @_jump_cost_ratio
+    if @_jumping and @onGround() and @energy.strength() > jump_cost
       imp = new b2Vec2(0, -@_jump_str)
       @body.ApplyImpulse(imp, pos)
-      @energy.decCurrent(@_jump_str * @_jump_cost_ratio)
+      @energy.decCurrent(jump_cost)
 
     if (Math.abs(vel.x) > @_max_vel)
       vel.x = (if vel.x > 0 then 1 else -1) * @_max_vel

@@ -3,8 +3,8 @@ settings = {
   DEBUG: true
   PRINT_INPUT: false
   FULL_SCREEN: false
-  WIDTH: 900
-  HEIGHT: 600
+  WIDTH: 1000
+  HEIGHT: 700
   PPM: 30  # pixels per meter
 
   STAR_COUNT: 50

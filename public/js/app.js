@@ -10,8 +10,8 @@
     DEBUG: true,
     PRINT_INPUT: false,
     FULL_SCREEN: false,
-    WIDTH: 900,
-    HEIGHT: 600,
+    WIDTH: 1000,
+    HEIGHT: 700,
     PPM: 30,
     STAR_COUNT: 50,
     STAR_MIN_DEPTH: 0.01,
@@ -286,17 +286,18 @@
     }
 
     BaseCharacter.prototype.update = function() {
-      var force, imp, pos, vel;
+      var force, imp, jump_cost, pos, vel;
 
       vel = this.body.GetLinearVelocity();
       pos = this.body.GetPosition();
       force = this._move_direction.Copy();
       force.Multiply(500);
       this.body.ApplyForce(force, pos);
-      if (this._jumping && this.onGround()) {
+      jump_cost = this._jump_str * this._jump_cost_ratio;
+      if (this._jumping && this.onGround() && this.energy.strength() > jump_cost) {
         imp = new b2Vec2(0, -this._jump_str);
         this.body.ApplyImpulse(imp, pos);
-        this.energy.decCurrent(this._jump_str * this._jump_cost_ratio);
+        this.energy.decCurrent(jump_cost);
       }
       if (Math.abs(vel.x) > this._max_vel) {
         vel.x = (vel.x > 0 ? 1 : -1) * this._max_vel;
