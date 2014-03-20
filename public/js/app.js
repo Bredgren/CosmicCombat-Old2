@@ -807,17 +807,23 @@
     };
 
     function Universe(game, graphics, camera) {
-      var bodyDef, doSleep, fixDef, gravity;
+      var atm_tex, bodyDef, doSleep, fixDef, gravity;
 
       this.game = game;
       this.graphics = graphics;
       this.camera = camera;
       gravity = new b2Vec2(0, 20);
       this.world = new b2Dynamics.b2World(gravity, doSleep = true);
+      atm_tex = PIXI.Texture.fromImage("assets/img/atmosphere.png");
+      this._atm = new PIXI.TilingSprite(atm_tex, settings.WIDTH, 3000);
+      this._atm.position.x = 0;
+      this._atm.position.y = 0;
+      this.game.bg_stage.addChild(this._atm);
       this._debug_drawer = new DebugDraw(this.camera);
       this._debug_drawer.SetSprite(this.graphics);
       this._debug_drawer.SetDrawScale(1);
-      this._debug_drawer.SetFillAlpha(0.3);
+      this._debug_drawer.SetAlpha(1);
+      this._debug_drawer.SetFillAlpha(1);
       this._debug_drawer.SetLineThickness(1.0);
       this._debug_drawer.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_centerOfMassBit | b2DebugDraw.e_controllerBit | b2DebugDraw.e_pairBit | b2DebugDraw.e_aabbBit);
       this.world.SetDebugDraw(this._debug_drawer);
@@ -865,6 +871,7 @@
     Universe.prototype.draw = function() {
       var c, _i, _len, _ref;
 
+      this._atm.position.y = -this.camera.worldToScreenUnits(this.camera).y - 2500;
       _ref = this.characters;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         c = _ref[_i];
@@ -1809,7 +1816,7 @@
     var DOM_LOADED, assets, loader;
 
     DOM_LOADED = true;
-    assets = ["assets/img/jackie_chun.json", "assets/img/goku.json"];
+    assets = ["assets/img/jackie_chun.json", "assets/img/goku.json", "assets/img/atmosphere.png"];
     loader = new PIXI.AssetLoader(assets);
     loader.onComplete = main;
     return loader.load();

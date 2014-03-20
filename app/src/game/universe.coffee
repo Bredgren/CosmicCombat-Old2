@@ -25,11 +25,18 @@ class Universe
     gravity = new b2Vec2(0, 20)
     @world = new b2Dynamics.b2World(gravity, doSleep=true)
 
+    atm_tex = PIXI.Texture.fromImage("assets/img/atmosphere.png")
+    @_atm = new PIXI.TilingSprite(atm_tex, settings.WIDTH, 3000)
+    @_atm.position.x = 0
+    @_atm.position.y = 0
+    @game.bg_stage.addChild(@_atm)
+
     @_debug_drawer = new DebugDraw(@camera)
     @_debug_drawer.SetSprite(@graphics)
     # @_debug_drawer.SetDrawScale(settings.PPM)
     @_debug_drawer.SetDrawScale(1)
-    @_debug_drawer.SetFillAlpha(0.3)
+    @_debug_drawer.SetAlpha(1)
+    @_debug_drawer.SetFillAlpha(1)
     @_debug_drawer.SetLineThickness(1.0)
     @_debug_drawer.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit |
       b2DebugDraw.e_centerOfMassBit | b2DebugDraw.e_controllerBit |
@@ -68,6 +75,7 @@ class Universe
       body = body.GetNext()
 
   draw: () ->
+    @_atm.position.y = -@camera.worldToScreenUnits(@camera).y - 2500
     c.draw() for c in @characters
     if @_debug_draw
       @world.DrawDebugData()

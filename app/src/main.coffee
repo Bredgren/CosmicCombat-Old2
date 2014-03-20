@@ -6,7 +6,8 @@
 # Execute after document is loaded
 $ ->
   DOM_LOADED = true
-  assets = ["assets/img/jackie_chun.json", "assets/img/goku.json"]
+  assets = ["assets/img/jackie_chun.json", "assets/img/goku.json",
+    "assets/img/atmosphere.png"]
   loader = new PIXI.AssetLoader(assets)
   loader.onComplete = main
   loader.load()
