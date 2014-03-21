@@ -8,7 +8,7 @@
 class Universe
   planets: []
   characters: []
-  _debug_draw: false
+  debug_draw_enabled: false
   _debug_drawer: null
 
   __terrain_width: 100
@@ -77,7 +77,7 @@ class Universe
   draw: () ->
     @_atm.position.y = -@camera.worldToScreenUnits(@camera).y - 2500
     c.draw() for c in @characters
-    if @_debug_draw
+    if @debug_draw_enabled
       @world.DrawDebugData()
 
   # Takes a point in world space where you would like to draw something and
@@ -136,8 +136,8 @@ class Universe
 
     return {x: x, y: y}
 
-  toggleDebugDraw: () ->
-    @_debug_draw = not @_debug_draw
+  # toggleDebugDraw: () ->
+  #   @_debug_draw = not @_debug_draw
 
   addDebugDrawFlag: (flag) ->
     flags = @_debug_drawer.GetFlags()
