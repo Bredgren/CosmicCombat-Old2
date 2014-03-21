@@ -22,30 +22,14 @@ class Game
   _current_text: null
   _strength_text: null
 
-  _dev:
-    enabled: false  # whether dev-mode is enabled
-    text: null  # PIXI text object for the "Dev-Mode" text
-    # new_char_options:  # options used to make new character
-    #   pos:
-    #     x: 0
-    #     y: 0
-    #   type: Characters.GOKU
-    # new_char: false  # click creates a character when true
-    new_text: null  # PIXI text object for new character
-    select_text: null  # PIXI text object to show seleted character
-    control_text: null  # PIXI text object to show controlled character
-    selected_char: null  # the currently selected character
-    gui: null
-    # screen_x: 0
-    # screen_y: 0
-    # world_x: 0
-    # world_y: 0
-    # show_aabb: true
-    # show_center_of_mass: true
-    # show_controller: true
-    # show_joint: true
-    # show_pair: true
-    # show_shape: true
+  _new_char_options:
+    pos:
+      x: 0
+      y: 0
+    type: Characters.GOKU
+    onclick: null
+
+  _dev_gui: null
 
   constructor: (@stage) ->
     @hud_stage = new PIXI.DisplayObjectContainer()
@@ -65,30 +49,17 @@ class Game
 
     @camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT)
     @universe = new Universe(@, @debug_graphics, @camera)
-    # @_initGui()
-    # @_resetGui()
-    @_dev.gui = new DevGui(@)
+    @_dev_gui = new DevGui(@)
 
     @_starfield = new StarField(@camera, @bg_stage, settings.STAR_COUNT,
       settings.STAR_MIN_DEPTH, settings.STAR_MAX_DEPTH)
 
-    options =
-      pos:
-        x: -8
-        y: -10
-      type: Characters.JACKIE
-    @spawnCharacter(options)
+    @_new_char_options.pos.x = -8
+    @_new_char_options.pos.y = -10
+    @_new_char_options.type = Characters.JACKIE
+    @_new_char_options.onclick = @_dev_gui.onCharacterClick
+    @spawnCharacter(@_new_char_options)
     @_controlled_char = @universe.characters[0]
-
-    style = {font: "15px Arial", fill: "#FFFFFF"}
-    @_dev.text = new PIXI.Text("Dev-Mode", style)
-    @_dev.text.position.x = 10
-    @_dev.text.position.y = 5
-
-    style = {font: "10px Arial", fill: "#FFFFFF"}
-    @_dev.new_text = new PIXI.Text("Click to spawn Character", style)
-    @_dev.select_text = new PIXI.Text("Selected", style)
-    @_dev.control_text = new PIXI.Text("Controlled", style)
 
     style = {font: "#{settings.ENERGY_BAR.text.size}px Arial", fill: "#FFFFFF"}
     @_max_text = new PIXI.Text("0", style)
@@ -98,8 +69,8 @@ class Game
     @_strength_text = new PIXI.Text("0", style)
     @stage.addChild(@_strength_text)
 
-    if settings.DEBUG
-      @toggleDevMode()
+    if settings.DEBUG and not @_dev_gui.enabled
+      @_dev_gui.toggleDevMode()
 
   update: () ->
     if not @paused
@@ -110,31 +81,7 @@ class Game
       @camera.x = pos.x
       @camera.y = pos.y
 
-    if @_dev.enabled
-      if @_dev.selected_char
-        pos = @camera.worldToScreen(@_dev.selected_char.position())
-        size = @_dev.selected_char.size()
-        w = @_dev.select_text.width
-        @_dev.select_text.position.x = Math.round(pos.x - w / 2)
-        @_dev.select_text.position.y = Math.round(pos.y - size.h / 2 - 10)
-        # @_dev.cur_energy_gui.max = @_dev.selected_char.energy.max()
-        # @_dev.cur_energy_gui.current = @_dev.selected_char.energy.current()
-        # @_dev.cur_energy_gui.strength = @_dev.selected_char.energy.strength()
-      else
-        @_dev.select_text.position.x = -100
-        @_dev.select_text.position.y = 0
-      if @_controlled_char
-        pos = @camera.worldToScreen(@_controlled_char.position())
-        size = @_controlled_char.size()
-        w = @_dev.control_text.width
-        @_dev.control_text.position.x = Math.round(pos.x - w / 2)
-        @_dev.control_text.position.y = Math.round(pos.y - size.h / 2 - 10)
-        # @_dev.con_energy_gui.max = @_controlled_char.energy.max()
-        # @_dev.con_energy_gui.current = @_controlled_char.energy.current()
-        # @_dev.con_energy_gui.strength = @_controlled_char.energy.strength()
-      else
-        @_dev.control_text.position.x = -100
-        @_dev.control_text.position.y = 0
+    @_dev_gui.update()
 
   clear: () ->
     @debug_graphics.clear()
@@ -192,32 +139,14 @@ class Game
     @_strength_text.position.y =
       @_current_text.position.y + @_current_text.height + pad
 
-  _onCharacterClick: (character, mousedata) =>
-    if @_dev.enabled
-      @_selectCharacter(character)
+  toggleDevMode: () ->
+    @_dev_gui.toggleDevMode()
+
+  getControlledCharacter: () ->
+    return @_controlled_char
 
   spawnCharacter: (options) ->
-    c = @universe.newCharacter(options, @_onCharacterClick)
-
-  toggleDevMode: () ->
-    if @_dev.enabled
-      @stage.removeChild(@_dev.text)
-      if @_dev.gui.new_char
-        @stage.removeChild(@_dev.new_text)
-      @stage.removeChild(@_dev.select_text)
-      @stage.removeChild(@_dev.control_text)
-      @_dev.gui.remove()
-    else
-      @stage.addChild(@_dev.text)
-      if @_dev.gui.new_char
-        @stage.addChild(@_dev.new_text)
-      @stage.addChild(@_dev.select_text)
-      @stage.addChild(@_dev.control_text)
-      @_dev.gui.create()
-    @_dev.enabled = not @_dev.enabled
-
-  # toggleDebugDraw: () ->
-  #   @universe.toggleDebugDraw()
+    c = @universe.newCharacter(options)
 
   onKeyDown: (key_code) ->
     if @_controlled_char
@@ -261,16 +190,13 @@ class Game
 
   onMouseDown: (screen_pos) ->
     @_mouse_down = true
-    if @_dev.gui.new_char
-      @_dev.gui.new_char_options.pos.x = @_dev.gui.world_x
-      @_dev.gui.new_char_options.pos.y = @_dev.gui.world_y
-      @spawnCharacter(@_dev.gui.new_char_options)
+    @_dev_gui.onMouseDown(screen_pos)
 
   onMouseUp: (screen_pos) ->
     @_mouse_down = false
 
   onMouseMove: (screen_pos) ->
-    if @_mouse_down and @_dev.enabled
+    if @_mouse_down and @_dev_gui.enabled
       dp =
         x: screen_pos.x - @_last_mouse_pos.x
         y: screen_pos.y - @_last_mouse_pos.y
@@ -280,14 +206,7 @@ class Game
 
     @_last_mouse_pos = screen_pos
 
-    w = @camera.screenToWorld(screen_pos)
-    @_dev.gui.setMouseCoords(screen_pos.x, screen_pos.y, w.x, w.y)
-
-    if @_dev.gui.new_char
-      w = @_dev.new_text.width
-      h = @_dev.new_text.height
-      @_dev.new_text.position.x = screen_pos.x - w / 2
-      @_dev.new_text.position.y = screen_pos.y - h
+    @_dev_gui.onMouseMove(screen_pos)
 
   onMouseWheel: (delta) ->
 

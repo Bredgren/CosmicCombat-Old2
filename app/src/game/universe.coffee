@@ -153,16 +153,15 @@ class Universe
   # options [Object]:
   #   pos: {x, y} - default = {x: 0, y: 0}
   #   type: String - ...
-  #
-  # click_callback = (Character, mousedata) ->
+  #   onclick = (Character, mousedata) ->
   # returns the new Character
-  newCharacter: (options, click_callback) ->
+  newCharacter: (options) ->
     options = options ? {}
     options.pos = options.pos ? {x: 0, y: 0}
     type = options.type ? "Goku"
+    callback = options.onclick ? () ->
     pos = new b2Vec2(options.pos.x, options.pos.y)
-    # character = new Character(@, pos, type, click_callback)
-    character = Characters.newCharacter(@, pos, type, click_callback)
+    character = Characters.newCharacter(@, pos, type, callback)
     @characters.push(character)
     return character
 

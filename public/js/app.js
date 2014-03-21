@@ -685,6 +685,16 @@
   })();
 
   DevGui = (function() {
+    DevGui.prototype.enabled = false;
+
+    DevGui.prototype.text = null;
+
+    DevGui.prototype.new_text = null;
+
+    DevGui.prototype.select_text = null;
+
+    DevGui.prototype.control_text = null;
+
     DevGui.prototype.screen_x = 0;
 
     DevGui.prototype.screen_y = 0;
@@ -712,19 +722,40 @@
         x: 0,
         y: 0
       },
-      type: Characters.GOKU
+      type: Characters.GOKU,
+      onclick: null
     };
 
+    DevGui.prototype.selected_char = null;
+
     function DevGui(game) {
+      var style;
+
       this.game = game;
+      this.onCharacterClick = __bind(this.onCharacterClick, this);
       this._onChangeNewChar = __bind(this._onChangeNewChar, this);
+      style = {
+        font: "15px Arial",
+        fill: "#FFFFFF"
+      };
+      this.dev_text = new PIXI.Text("Dev-Mode", style);
+      this.dev_text.position.x = 10;
+      this.dev_text.position.y = 5;
+      style = {
+        font: "10px Arial",
+        fill: "#FFFFFF"
+      };
+      this.new_text = new PIXI.Text("Click to spawn Character", style);
+      this.select_text = new PIXI.Text("Selected", style);
+      this.control_text = new PIXI.Text("Controlled", style);
+      this.new_char_options.onclick = this.onCharacterClick;
     }
 
     DevGui.prototype.create = function() {
       this.gui = new dat.GUI();
       this.root_folder = this.gui.addFolder('Dev Controls');
       this.root_folder.open();
-      this.root_folder.add(this.game, 'toggleDevMode');
+      this.root_folder.add(this, 'toggleDevMode');
       this._createMouseCoordsFolder();
       this._createGameFolder();
       return this._createCharacterFolder();
@@ -732,6 +763,55 @@
 
     DevGui.prototype.remove = function() {
       return this.gui.destroy();
+    };
+
+    DevGui.prototype.update = function() {
+      var c, pos, size, w;
+
+      if (this.enabled) {
+        if (this.selected_char) {
+          pos = this.game.camera.worldToScreen(this.selected_char.position());
+          size = this.selected_char.size();
+          w = this.select_text.width;
+          this.select_text.position.x = Math.round(pos.x - w / 2);
+          this.select_text.position.y = Math.round(pos.y - size.h / 2 - 10);
+        } else {
+          this.select_text.position.x = -100;
+          this.select_text.position.y = 0;
+        }
+        c = this.game.getControlledCharacter();
+        if (c) {
+          pos = this.game.camera.worldToScreen(c.position());
+          size = c.size();
+          w = this.control_text.width;
+          this.control_text.position.x = Math.round(pos.x - w / 2);
+          return this.control_text.position.y = Math.round(pos.y - size.h / 2 - 10);
+        } else {
+          this.control_text.position.x = -100;
+          return this.control_text.position.y = 0;
+        }
+      }
+    };
+
+    DevGui.prototype.toggleDevMode = function() {
+      if (this.enabled) {
+        this.game.stage.removeChild(this.dev_text);
+        if (this.new_char) {
+          this.game.stage.removeChild(this.new_text);
+        }
+        this.game.stage.removeChild(this.select_text);
+        this.game.stage.removeChild(this.control_text);
+        this.remove();
+      } else {
+        this.game.stage.addChild(this.dev_text);
+        if (this.new_char) {
+          this.game.stage.addChild(this.new_text);
+        }
+        this.game.stage.addChild(this.select_text);
+        this.game.stage.addChild(this.control_text);
+        this.create();
+      }
+      return this.enabled = !this.enabled;
     };
 
     DevGui.prototype.setMouseCoords = function(screen_x, screen_y, world_x, world_y) {
@@ -758,6 +838,7 @@
         _this = this;
 
       f = this.root_folder.addFolder("Game");
+      f.open();
       f2 = f.addFolder("Debug Draw");
       f2.add(this.game.universe, "debug_draw_enabled");
       onChange = function(flag) {
@@ -807,9 +888,38 @@
 
     DevGui.prototype._onChangeNewChar = function(value) {
       if (value) {
-        return this.game.stage.addChild(this.game._dev.new_text);
+        return this.game.stage.addChild(this.new_text);
       } else {
-        return this.game.stage.removeChild(this.game._dev.new_text);
+        return this.game.stage.removeChild(this.new_text);
+      }
+    };
+
+    DevGui.prototype._selectCharacter = function(character) {
+      return console.log('select');
+    };
+
+    DevGui.prototype.onCharacterClick = function(character, mousedata) {
+      if (this.enabled) {
+        return this._selectCharacter(character);
+      }
+    };
+
+    DevGui.prototype.onMouseDown = function(screen_pos) {
+      if (this.new_char) {
+        return this.game.spawnCharacter(this.new_char_options);
+      }
+    };
+
+    DevGui.prototype.onMouseMove = function(screen_pos) {
+      var h, w;
+
+      w = this.game.camera.screenToWorld(screen_pos);
+      this.setMouseCoords(screen_pos.x, screen_pos.y, w.x, w.y);
+      if (this.new_char) {
+        w = this.new_text.width;
+        h = this.new_text.height;
+        this.new_text.position.x = screen_pos.x - w / 2;
+        return this.new_text.position.y = screen_pos.y - h;
       }
     };
 
@@ -1202,8 +1312,8 @@
       return this._debug_drawer.SetFlags(flags);
     };
 
-    Universe.prototype.newCharacter = function(options, click_callback) {
-      var character, pos, type, _ref, _ref1;
+    Universe.prototype.newCharacter = function(options) {
+      var callback, character, pos, type, _ref, _ref1, _ref2;
 
       options = options != null ? options : {};
       options.pos = (_ref = options.pos) != null ? _ref : {
@@ -1211,8 +1321,9 @@
         y: 0
       };
       type = (_ref1 = options.type) != null ? _ref1 : "Goku";
+      callback = (_ref2 = options.onclick) != null ? _ref2 : function() {};
       pos = new b2Vec2(options.pos.x, options.pos.y);
-      character = Characters.newCharacter(this, pos, type, click_callback);
+      character = Characters.newCharacter(this, pos, type, callback);
       this.characters.push(character);
       return character;
     };
@@ -1307,21 +1418,21 @@
 
     Game.prototype._strength_text = null;
 
-    Game.prototype._dev = {
-      enabled: false,
-      text: null,
-      new_text: null,
-      select_text: null,
-      control_text: null,
-      selected_char: null,
-      gui: null
+    Game.prototype._new_char_options = {
+      pos: {
+        x: 0,
+        y: 0
+      },
+      type: Characters.GOKU,
+      onclick: null
     };
 
+    Game.prototype._dev_gui = null;
+
     function Game(stage) {
-      var options, style;
+      var style;
 
       this.stage = stage;
-      this._onCharacterClick = __bind(this._onCharacterClick, this);
       this.hud_stage = new PIXI.DisplayObjectContainer();
       this.game_stage = new PIXI.DisplayObjectContainer();
       this.debug_stage = new PIXI.DisplayObjectContainer();
@@ -1336,31 +1447,14 @@
       this.hud_stage.addChild(this.hud_graphics);
       this.camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT);
       this.universe = new Universe(this, this.debug_graphics, this.camera);
-      this._dev.gui = new DevGui(this);
+      this._dev_gui = new DevGui(this);
       this._starfield = new StarField(this.camera, this.bg_stage, settings.STAR_COUNT, settings.STAR_MIN_DEPTH, settings.STAR_MAX_DEPTH);
-      options = {
-        pos: {
-          x: -8,
-          y: -10
-        },
-        type: Characters.JACKIE
-      };
-      this.spawnCharacter(options);
+      this._new_char_options.pos.x = -8;
+      this._new_char_options.pos.y = -10;
+      this._new_char_options.type = Characters.JACKIE;
+      this._new_char_options.onclick = this._dev_gui.onCharacterClick;
+      this.spawnCharacter(this._new_char_options);
       this._controlled_char = this.universe.characters[0];
-      style = {
-        font: "15px Arial",
-        fill: "#FFFFFF"
-      };
-      this._dev.text = new PIXI.Text("Dev-Mode", style);
-      this._dev.text.position.x = 10;
-      this._dev.text.position.y = 5;
-      style = {
-        font: "10px Arial",
-        fill: "#FFFFFF"
-      };
-      this._dev.new_text = new PIXI.Text("Click to spawn Character", style);
-      this._dev.select_text = new PIXI.Text("Selected", style);
-      this._dev.control_text = new PIXI.Text("Controlled", style);
       style = {
         font: "" + settings.ENERGY_BAR.text.size + "px Arial",
         fill: "#FFFFFF"
@@ -1371,13 +1465,13 @@
       this.stage.addChild(this._current_text);
       this._strength_text = new PIXI.Text("0", style);
       this.stage.addChild(this._strength_text);
-      if (settings.DEBUG) {
-        this.toggleDevMode();
+      if (settings.DEBUG && !this._dev_gui.enabled) {
+        this._dev_gui.toggleDevMode();
       }
     }
 
     Game.prototype.update = function() {
-      var pos, size, w;
+      var pos;
 
       if (!this.paused) {
         this.universe.update();
@@ -1387,28 +1481,7 @@
         this.camera.x = pos.x;
         this.camera.y = pos.y;
       }
-      if (this._dev.enabled) {
-        if (this._dev.selected_char) {
-          pos = this.camera.worldToScreen(this._dev.selected_char.position());
-          size = this._dev.selected_char.size();
-          w = this._dev.select_text.width;
-          this._dev.select_text.position.x = Math.round(pos.x - w / 2);
-          this._dev.select_text.position.y = Math.round(pos.y - size.h / 2 - 10);
-        } else {
-          this._dev.select_text.position.x = -100;
-          this._dev.select_text.position.y = 0;
-        }
-        if (this._controlled_char) {
-          pos = this.camera.worldToScreen(this._controlled_char.position());
-          size = this._controlled_char.size();
-          w = this._dev.control_text.width;
-          this._dev.control_text.position.x = Math.round(pos.x - w / 2);
-          return this._dev.control_text.position.y = Math.round(pos.y - size.h / 2 - 10);
-        } else {
-          this._dev.control_text.position.x = -100;
-          return this._dev.control_text.position.y = 0;
-        }
-      }
+      return this._dev_gui.update();
     };
 
     Game.prototype.clear = function() {
@@ -1468,37 +1541,18 @@
       return this._strength_text.position.y = this._current_text.position.y + this._current_text.height + pad;
     };
 
-    Game.prototype._onCharacterClick = function(character, mousedata) {
-      if (this._dev.enabled) {
-        return this._selectCharacter(character);
-      }
+    Game.prototype.toggleDevMode = function() {
+      return this._dev_gui.toggleDevMode();
+    };
+
+    Game.prototype.getControlledCharacter = function() {
+      return this._controlled_char;
     };
 
     Game.prototype.spawnCharacter = function(options) {
       var c;
 
-      return c = this.universe.newCharacter(options, this._onCharacterClick);
-    };
-
-    Game.prototype.toggleDevMode = function() {
-      if (this._dev.enabled) {
-        this.stage.removeChild(this._dev.text);
-        if (this._dev.gui.new_char) {
-          this.stage.removeChild(this._dev.new_text);
-        }
-        this.stage.removeChild(this._dev.select_text);
-        this.stage.removeChild(this._dev.control_text);
-        this._dev.gui.remove();
-      } else {
-        this.stage.addChild(this._dev.text);
-        if (this._dev.gui.new_char) {
-          this.stage.addChild(this._dev.new_text);
-        }
-        this.stage.addChild(this._dev.select_text);
-        this.stage.addChild(this._dev.control_text);
-        this._dev.gui.create();
-      }
-      return this._dev.enabled = !this._dev.enabled;
+      return c = this.universe.newCharacter(options);
     };
 
     Game.prototype.onKeyDown = function(key_code) {
@@ -1549,11 +1603,7 @@
 
     Game.prototype.onMouseDown = function(screen_pos) {
       this._mouse_down = true;
-      if (this._dev.gui.new_char) {
-        this._dev.gui.new_char_options.pos.x = this._dev.gui.world_x;
-        this._dev.gui.new_char_options.pos.y = this._dev.gui.world_y;
-        return this.spawnCharacter(this._dev.gui.new_char_options);
-      }
+      return this._dev_gui.onMouseDown(screen_pos);
     };
 
     Game.prototype.onMouseUp = function(screen_pos) {
@@ -1561,9 +1611,9 @@
     };
 
     Game.prototype.onMouseMove = function(screen_pos) {
-      var dp, h, w;
+      var dp;
 
-      if (this._mouse_down && this._dev.enabled) {
+      if (this._mouse_down && this._dev_gui.enabled) {
         dp = {
           x: screen_pos.x - this._last_mouse_pos.x,
           y: screen_pos.y - this._last_mouse_pos.y
@@ -1573,14 +1623,7 @@
         this.camera.y -= dp.y;
       }
       this._last_mouse_pos = screen_pos;
-      w = this.camera.screenToWorld(screen_pos);
-      this._dev.gui.setMouseCoords(screen_pos.x, screen_pos.y, w.x, w.y);
-      if (this._dev.gui.new_char) {
-        w = this._dev.new_text.width;
-        h = this._dev.new_text.height;
-        this._dev.new_text.position.x = screen_pos.x - w / 2;
-        return this._dev.new_text.position.y = screen_pos.y - h;
-      }
+      return this._dev_gui.onMouseMove(screen_pos);
     };
 
     Game.prototype.onMouseWheel = function(delta) {};
