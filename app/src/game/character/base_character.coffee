@@ -6,11 +6,17 @@
 class BaseCharacter
   body: null
   energy: null
+
+  # stats
   recover_rate: 0.0002  # percent of max
   improve_rate: 0.1  # percent of amount recovered
   power_up_rate: 0.001
   power_down_rate: 0.004
   fly_cost: 10
+  jump_str: 25
+  jump_cost_ratio: 0.1 # energy per unit of jump_str
+  max_vel: 15
+  linear_damping: 10
 
   _stage: null
 
@@ -19,6 +25,7 @@ class BaseCharacter
   _body_box: null
   _body_circle: null
 
+  # state
   _move_direction: null
   _directions:
     left: false
@@ -27,10 +34,7 @@ class BaseCharacter
     down: false
   _flying: false
   _jumping: false
-  _jump_str: 25
-  _jump_cost_ratio: 0.1
   _blocking: false
-  _max_vel: 15
   _power_up: 0
 
   # init_pos [b2Vec2]
@@ -43,24 +47,30 @@ class BaseCharacter
     energy_spent = 0
     vel = @body.GetLinearVelocity()
     pos = @body.GetPosition()
+    on_ground = @onGround()
 
     if not @_blocking
       force = @_move_direction.Copy()
       force.Multiply(500)
       @body.ApplyForce(force, pos)
+      # Only apply damping when not being moved
+      if force.x is 0 and force.y is 0 and (@_flying or on_ground)
+        @body.SetLinearDamping(@linear_damping)
+      else
+        @body.SetLinearDamping(0)
 
-    jump_cost = @_jump_str * @_jump_cost_ratio
-    if @_jumping and @onGround() and @energy.strength() > jump_cost
-      imp = new b2Vec2(0, -@_jump_str)
+    jump_cost = @jump_str * @jump_cost_ratio
+    if @_jumping and on_ground and @energy.strength() > jump_cost
+      imp = new b2Vec2(0, -@jump_str)
       @body.ApplyImpulse(imp, pos)
       energy_spent += jump_cost
 
-    if (Math.abs(vel.x) > @_max_vel)
-      vel.x = (if vel.x > 0 then 1 else -1) * @_max_vel
+    if (Math.abs(vel.x) > @max_vel)
+      vel.x = (if vel.x > 0 then 1 else -1) * @max_vel
       @body.SetLinearVelocity(vel)
 
-    if (Math.abs(vel.y) > @_max_vel)
-      vel.y = (if vel.y > 0 then 1 else -1) * @_max_vel
+    if (Math.abs(vel.y) > @max_vel)
+      vel.y = (if vel.y > 0 then 1 else -1) * @max_vel
       @body.SetLinearVelocity(vel)
 
     @body.SetAwake(true)
@@ -145,11 +155,11 @@ class BaseCharacter
     @endDown()
     @_flying = false
 
-  startMoveRight: () ->
+  startRight: () ->
     @_directions.right = true
     @_move_direction.x = 1
 
-  endMoveRight: () ->
+  endRight: () ->
     @_directions.right = false
     if @_directions.left
       @_move_direction.x = -1
@@ -157,11 +167,11 @@ class BaseCharacter
       @_move_direction.x = 0
       # @_stopMoveX()
 
-  startMoveLeft: () ->
+  startLeft: () ->
     @_directions.left = true
     @_move_direction.x = -1
 
-  endMoveLeft: () ->
+  endLeft: () ->
     @_directions.left = false
     @_move_direction.x = (if @_directions.right then 1 else 0)
     if @_directions.right
@@ -189,6 +199,15 @@ class BaseCharacter
 
   endBlock: () ->
     @_blocking = false
+
+  endAll: () ->
+    @endUp()
+    @endDown()
+    @endLeft()
+    @endRight()
+    @endPowerUp()
+    @endPowerDown()
+    @endBlock()
 
   _stopMoveX: () ->
     vel = @body.GetLinearVelocity()

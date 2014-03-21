@@ -219,9 +219,9 @@ class Game
     if @_controlled_char
       switch key_code
         when settings.BINDINGS.LEFT
-          @_controlled_char.startMoveLeft()
+          @_controlled_char.startLeft()
         when settings.BINDINGS.RIGHT
-          @_controlled_char.startMoveRight()
+          @_controlled_char.startRight()
         when settings.BINDINGS.UP
           @_controlled_char.startUp()
         when settings.BINDINGS.DOWN
@@ -239,9 +239,9 @@ class Game
     if @_controlled_char
       switch key_code
         when settings.BINDINGS.LEFT
-          @_controlled_char.endMoveLeft()
+          @_controlled_char.endLeft()
         when settings.BINDINGS.RIGHT
-          @_controlled_char.endMoveRight()
+          @_controlled_char.endRight()
         when settings.BINDINGS.UP
           @_controlled_char.endUp()
         when settings.BINDINGS.DOWN
@@ -297,9 +297,7 @@ class Game
   takeControl: () ->
     if @_dev.selected_char
       if @_controlled_char
-        @_controlled_char.endMoveRight()
-        @_controlled_char.endMoveLeft()
-        @_controlled_char.endJump()
+        @_controlled_char.endAll()
       @_controlled_char = @_dev.selected_char
       @_createControlledCharFolder()
       @_removeSelectedCharFolder()
@@ -514,8 +512,9 @@ class Game
     @_dev.con_char_gui =
       folder: null
       pos:
-        x: 0
-        y: 0
+        x: null
+        y: null
+      lin_damp: null
     @_resetControlledEnergyFolder()
 
   # Creates or updates the folder
@@ -530,15 +529,14 @@ class Game
       f = @_dev.con_char_gui.folder
       f.remove(@_dev.con_char_gui.pos.x)
       f.remove(@_dev.con_char_gui.pos.y)
+      f.remove(@_dev.con_char_gui.lin_damp)
       @_removeControlledEnergyFolder()
 
     @_createControlledEnergyFolder()
     pos = @_controlled_char.position()
     @_dev.con_char_gui.pos.x = f.add(pos, 'x').listen()
     @_dev.con_char_gui.pos.y = f.add(pos, 'y').listen()
-    # @_dev.new_char_gui.type =
-    #   @_dev.new_char_gui.folder.add(@_dev.new_char_options, 'type',
-    #     ['Jackie', 'Goku'])
+    @_dev.con_char_gui.lin_damp = f.add(@_controlled_char, 'linear_damping')
 
   _removeControlledCharFolder: () ->
     if not @_dev.con_char_gui.folder then return

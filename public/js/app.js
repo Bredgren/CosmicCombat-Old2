@@ -252,6 +252,14 @@
 
     BaseCharacter.prototype.fly_cost = 10;
 
+    BaseCharacter.prototype.jump_str = 25;
+
+    BaseCharacter.prototype.jump_cost_ratio = 0.1;
+
+    BaseCharacter.prototype.max_vel = 15;
+
+    BaseCharacter.prototype.linear_damping = 10;
+
     BaseCharacter.prototype._stage = null;
 
     BaseCharacter.prototype._w = 0;
@@ -275,13 +283,7 @@
 
     BaseCharacter.prototype._jumping = false;
 
-    BaseCharacter.prototype._jump_str = 25;
-
-    BaseCharacter.prototype._jump_cost_ratio = 0.1;
-
     BaseCharacter.prototype._blocking = false;
-
-    BaseCharacter.prototype._max_vel = 15;
 
     BaseCharacter.prototype._power_up = 0;
 
@@ -293,28 +295,34 @@
     }
 
     BaseCharacter.prototype.update = function() {
-      var anti_g, energy_spent, force, imp, jump_cost, pos, vel;
+      var anti_g, energy_spent, force, imp, jump_cost, on_ground, pos, vel;
 
       energy_spent = 0;
       vel = this.body.GetLinearVelocity();
       pos = this.body.GetPosition();
+      on_ground = this.onGround();
       if (!this._blocking) {
         force = this._move_direction.Copy();
         force.Multiply(500);
         this.body.ApplyForce(force, pos);
+        if (force.x === 0 && force.y === 0 && (this._flying || on_ground)) {
+          this.body.SetLinearDamping(this.linear_damping);
+        } else {
+          this.body.SetLinearDamping(0);
+        }
       }
-      jump_cost = this._jump_str * this._jump_cost_ratio;
-      if (this._jumping && this.onGround() && this.energy.strength() > jump_cost) {
-        imp = new b2Vec2(0, -this._jump_str);
+      jump_cost = this.jump_str * this.jump_cost_ratio;
+      if (this._jumping && on_ground && this.energy.strength() > jump_cost) {
+        imp = new b2Vec2(0, -this.jump_str);
         this.body.ApplyImpulse(imp, pos);
         energy_spent += jump_cost;
       }
-      if (Math.abs(vel.x) > this._max_vel) {
-        vel.x = (vel.x > 0 ? 1 : -1) * this._max_vel;
+      if (Math.abs(vel.x) > this.max_vel) {
+        vel.x = (vel.x > 0 ? 1 : -1) * this.max_vel;
         this.body.SetLinearVelocity(vel);
       }
-      if (Math.abs(vel.y) > this._max_vel) {
-        vel.y = (vel.y > 0 ? 1 : -1) * this._max_vel;
+      if (Math.abs(vel.y) > this.max_vel) {
+        vel.y = (vel.y > 0 ? 1 : -1) * this.max_vel;
         this.body.SetLinearVelocity(vel);
       }
       this.body.SetAwake(true);
@@ -421,12 +429,12 @@
       return this._flying = false;
     };
 
-    BaseCharacter.prototype.startMoveRight = function() {
+    BaseCharacter.prototype.startRight = function() {
       this._directions.right = true;
       return this._move_direction.x = 1;
     };
 
-    BaseCharacter.prototype.endMoveRight = function() {
+    BaseCharacter.prototype.endRight = function() {
       this._directions.right = false;
       if (this._directions.left) {
         return this._move_direction.x = -1;
@@ -435,12 +443,12 @@
       }
     };
 
-    BaseCharacter.prototype.startMoveLeft = function() {
+    BaseCharacter.prototype.startLeft = function() {
       this._directions.left = true;
       return this._move_direction.x = -1;
     };
 
-    BaseCharacter.prototype.endMoveLeft = function() {
+    BaseCharacter.prototype.endLeft = function() {
       this._directions.left = false;
       this._move_direction.x = (this._directions.right ? 1 : 0);
       if (this._directions.right) {
@@ -474,6 +482,16 @@
 
     BaseCharacter.prototype.endBlock = function() {
       return this._blocking = false;
+    };
+
+    BaseCharacter.prototype.endAll = function() {
+      this.endUp();
+      this.endDown();
+      this.endLeft();
+      this.endRight();
+      this.endPowerUp();
+      this.endPowerDown();
+      return this.endBlock();
     };
 
     BaseCharacter.prototype._stopMoveX = function() {
@@ -1384,9 +1402,9 @@
       if (this._controlled_char) {
         switch (key_code) {
           case settings.BINDINGS.LEFT:
-            return this._controlled_char.startMoveLeft();
+            return this._controlled_char.startLeft();
           case settings.BINDINGS.RIGHT:
-            return this._controlled_char.startMoveRight();
+            return this._controlled_char.startRight();
           case settings.BINDINGS.UP:
             return this._controlled_char.startUp();
           case settings.BINDINGS.DOWN:
@@ -1407,9 +1425,9 @@
       if (this._controlled_char) {
         switch (key_code) {
           case settings.BINDINGS.LEFT:
-            return this._controlled_char.endMoveLeft();
+            return this._controlled_char.endLeft();
           case settings.BINDINGS.RIGHT:
-            return this._controlled_char.endMoveRight();
+            return this._controlled_char.endRight();
           case settings.BINDINGS.UP:
             return this._controlled_char.endUp();
           case settings.BINDINGS.DOWN:
@@ -1474,9 +1492,7 @@
     Game.prototype.takeControl = function() {
       if (this._dev.selected_char) {
         if (this._controlled_char) {
-          this._controlled_char.endMoveRight();
-          this._controlled_char.endMoveLeft();
-          this._controlled_char.endJump();
+          this._controlled_char.endAll();
         }
         this._controlled_char = this._dev.selected_char;
         this._createControlledCharFolder();
@@ -1758,9 +1774,10 @@
       this._dev.con_char_gui = {
         folder: null,
         pos: {
-          x: 0,
-          y: 0
-        }
+          x: null,
+          y: null
+        },
+        lin_damp: null
       };
       return this._resetControlledEnergyFolder();
     };
@@ -1779,12 +1796,14 @@
         f = this._dev.con_char_gui.folder;
         f.remove(this._dev.con_char_gui.pos.x);
         f.remove(this._dev.con_char_gui.pos.y);
+        f.remove(this._dev.con_char_gui.lin_damp);
         this._removeControlledEnergyFolder();
       }
       this._createControlledEnergyFolder();
       pos = this._controlled_char.position();
       this._dev.con_char_gui.pos.x = f.add(pos, 'x').listen();
-      return this._dev.con_char_gui.pos.y = f.add(pos, 'y').listen();
+      this._dev.con_char_gui.pos.y = f.add(pos, 'y').listen();
+      return this._dev.con_char_gui.lin_damp = f.add(this._controlled_char, 'linear_damping');
     };
 
     Game.prototype._removeControlledCharFolder = function() {
