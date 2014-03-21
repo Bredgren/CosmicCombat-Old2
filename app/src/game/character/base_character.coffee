@@ -237,7 +237,8 @@ class BaseCharacter
     recover_amount = @recover_rate * max - spent
     recovered_amount = @energy.incCurrent(recover_amount)
 
-    improve_amount = @improve_rate * recovered_amount
-    @energy.incMax(improve_amount)
+    if recovered_amount > 0
+      improve_amount = @improve_rate * recovered_amount
+      @energy.incMax(improve_amount)
 
     @energy.incStrength(@_power_up * @energy.max())
