@@ -145,6 +145,9 @@ class Game
   getControlledCharacter: () ->
     return @_controlled_char
 
+  setControlledCharacter: (char) ->
+    @_controlled_char = char
+
   spawnCharacter: (options) ->
     c = @universe.newCharacter(options)
 

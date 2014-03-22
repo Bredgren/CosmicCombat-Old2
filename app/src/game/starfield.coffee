@@ -8,14 +8,12 @@ class StarField
     @_stars = []
     for i in [0...@star_count]
       pos = {x: Math.random() * @camera.w, y: Math.random() * @camera.h}
-      # pos = @camera.screenToWorld(pos)
       star = {
         x: pos.x
         y: pos.y
         z: (Math.random() * (@min_depth - @max_depth)) + @max_depth
       }
       @_stars.push(star)
-    console.log(@_stars)
 
   clear: () ->
     @_g.clear()

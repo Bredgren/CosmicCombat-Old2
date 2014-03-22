@@ -153,8 +153,46 @@ class DevGui
     f.add(@new_char_options, 'type', Characters.TYPES)
 
   _createSelCharFolder: () ->
+    char = @selected_char
+    if not char then return
+
+    if @sel_char_folder
+      @_removeSelCharFolder()
+
+    @sel_char_folder = @char_folder.addFolder("Selected Character")
+    @sel_char_folder.add(@, "takeControl").listen()
+    @_fillCharFolder(char, @sel_char_folder)
+
+  _removeSelCharFolder: () ->
+    if not @sel_char_folder then return
+    @char_folder.removeFolder(@sel_char_folder)
+    @sel_char_folder = undefined
 
   _createConCharFolder: () ->
+    char = @game.getControlledCharacter()
+    if not char then return
+
+    if @con_char_folder
+      @_removeConCharFolder()
+
+    @con_char_folder = @char_folder.addFolder("Controlled Character")
+    @_fillCharFolder(char, @con_char_folder)
+
+  _removeConCharFolder: () ->
+    if not @con_char_folder then return
+    @char_folder.removeFolder(@con_char_folder)
+    @con_char_folder = undefined
+
+  _fillCharFolder: (char, f) ->
+    ef = f.addFolder("Energy")
+    @_fillEnergyFolder(char, ef)
+
+    pos = char.position()
+    f.add(pos, "x").listen()
+    f.add(pos, "y").listen()
+    f.add(char, 'linear_damping')
+
+  _fillEnergyFolder: (entity, f) ->
 
   _onChangeNewChar: (value) =>
     if value
@@ -163,20 +201,19 @@ class DevGui
       @game.stage.removeChild(@new_text)
 
   _selectCharacter: (character) ->
-    console.log('select')
-  #   if character is @_controlled_char or character is @_dev.selected_char
-  #     return
-  #   @_dev.selected_char = character
-  #   @_createSelectedCharFolder()
+    c = @game.getControlledCharacter()
+    if character is c or character is @selected_char then return
+    @selected_char = character
+    @_createSelCharFolder()
 
-  # takeControl: () ->
-  #   if @_dev.selected_char
-  #     if @_controlled_char
-  #       @_controlled_char.endAll()
-  #     @_controlled_char = @_dev.selected_char
-  #     @_createControlledCharFolder()
-  #     @_removeSelectedCharFolder()
-  #     @_dev.selected_char = null
+  takeControl: () ->
+    if @selected_char
+      c = @game.getControlledCharacter()
+      if c then c.endAll()
+      @game.setControlledCharacter(@selected_char)
+      @_createConCharFolder()
+      @_removeSelCharFolder()
+      @selected_char = null
 
   onCharacterClick: (character, mousedata) =>
     if @enabled

@@ -882,9 +882,63 @@
       return f.add(this.new_char_options, 'type', Characters.TYPES);
     };
 
-    DevGui.prototype._createSelCharFolder = function() {};
+    DevGui.prototype._createSelCharFolder = function() {
+      var char;
 
-    DevGui.prototype._createConCharFolder = function() {};
+      char = this.selected_char;
+      if (!char) {
+        return;
+      }
+      if (this.sel_char_folder) {
+        this._removeSelCharFolder();
+      }
+      this.sel_char_folder = this.char_folder.addFolder("Selected Character");
+      this.sel_char_folder.add(this, "takeControl").listen();
+      return this._fillCharFolder(char, this.sel_char_folder);
+    };
+
+    DevGui.prototype._removeSelCharFolder = function() {
+      if (!this.sel_char_folder) {
+        return;
+      }
+      this.char_folder.removeFolder(this.sel_char_folder);
+      return this.sel_char_folder = void 0;
+    };
+
+    DevGui.prototype._createConCharFolder = function() {
+      var char;
+
+      char = this.game.getControlledCharacter();
+      if (!char) {
+        return;
+      }
+      if (this.con_char_folder) {
+        this._removeConCharFolder();
+      }
+      this.con_char_folder = this.char_folder.addFolder("Controlled Character");
+      return this._fillCharFolder(char, this.con_char_folder);
+    };
+
+    DevGui.prototype._removeConCharFolder = function() {
+      if (!this.con_char_folder) {
+        return;
+      }
+      this.char_folder.removeFolder(this.con_char_folder);
+      return this.con_char_folder = void 0;
+    };
+
+    DevGui.prototype._fillCharFolder = function(char, f) {
+      var ef, pos;
+
+      ef = f.addFolder("Energy");
+      this._fillEnergyFolder(char, ef);
+      pos = char.position();
+      f.add(pos, "x").listen();
+      f.add(pos, "y").listen();
+      return f.add(char, 'linear_damping');
+    };
+
+    DevGui.prototype._fillEnergyFolder = function(entity, f) {};
 
     DevGui.prototype._onChangeNewChar = function(value) {
       if (value) {
@@ -895,7 +949,29 @@
     };
 
     DevGui.prototype._selectCharacter = function(character) {
-      return console.log('select');
+      var c;
+
+      c = this.game.getControlledCharacter();
+      if (character === c || character === this.selected_char) {
+        return;
+      }
+      this.selected_char = character;
+      return this._createSelCharFolder();
+    };
+
+    DevGui.prototype.takeControl = function() {
+      var c;
+
+      if (this.selected_char) {
+        c = this.game.getControlledCharacter();
+        if (c) {
+          c.endAll();
+        }
+        this.game.setControlledCharacter(this.selected_char);
+        this._createConCharFolder();
+        this._removeSelCharFolder();
+        return this.selected_char = null;
+      }
     };
 
     DevGui.prototype.onCharacterClick = function(character, mousedata) {
@@ -951,7 +1027,6 @@
         };
         this._stars.push(star);
       }
-      console.log(this._stars);
     }
 
     StarField.prototype.clear = function() {
@@ -1547,6 +1622,10 @@
 
     Game.prototype.getControlledCharacter = function() {
       return this._controlled_char;
+    };
+
+    Game.prototype.setControlledCharacter = function(char) {
+      return this._controlled_char = char;
     };
 
     Game.prototype.spawnCharacter = function(options) {
