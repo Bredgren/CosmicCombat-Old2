@@ -27,6 +27,8 @@ class DevGui
     type: Characters.GOKU
     onclick: null
   selected_char: null  # the currently selected character
+  sel_update_fn: null
+  con_update_fn: null
 
   constructor: (@game) ->
     style = {font: "15px Arial", fill: "#FFFFFF"}
@@ -61,9 +63,7 @@ class DevGui
         w = @select_text.width
         @select_text.position.x = Math.round(pos.x - w / 2)
         @select_text.position.y = Math.round(pos.y - size.h / 2 - 10)
-    #     # @_dev.cur_energy_gui.max = @_dev.selected_char.energy.max()
-    #     # @_dev.cur_energy_gui.current = @_dev.selected_char.energy.current()
-    #     # @_dev.cur_energy_gui.strength = @_dev.selected_char.energy.strength()
+        @sel_update_fn()
       else
         @select_text.position.x = -100
         @select_text.position.y = 0
@@ -74,9 +74,7 @@ class DevGui
         w = @control_text.width
         @control_text.position.x = Math.round(pos.x - w / 2)
         @control_text.position.y = Math.round(pos.y - size.h / 2 - 10)
-    #     # @_dev.con_energy_gui.max = @_controlled_char.energy.max()
-    #     # @_dev.con_energy_gui.current = @_controlled_char.energy.current()
-    #     # @_dev.con_energy_gui.strength = @_controlled_char.energy.strength()
+        @con_update_fn()
       else
         @control_text.position.x = -100
         @control_text.position.y = 0
@@ -161,7 +159,7 @@ class DevGui
 
     @sel_char_folder = @char_folder.addFolder("Selected Character")
     @sel_char_folder.add(@, "takeControl").listen()
-    @_fillCharFolder(char, @sel_char_folder)
+    @sel_update_fn = @_fillCharFolder(char, @sel_char_folder)
 
   _removeSelCharFolder: () ->
     if not @sel_char_folder then return
@@ -176,7 +174,7 @@ class DevGui
       @_removeConCharFolder()
 
     @con_char_folder = @char_folder.addFolder("Controlled Character")
-    @_fillCharFolder(char, @con_char_folder)
+    @con_update_fn = @_fillCharFolder(char, @con_char_folder)
 
   _removeConCharFolder: () ->
     if not @con_char_folder then return
@@ -185,14 +183,53 @@ class DevGui
 
   _fillCharFolder: (char, f) ->
     ef = f.addFolder("Energy")
-    @_fillEnergyFolder(char, ef)
+    fn = @_fillEnergyFolder(char, ef)
 
     pos = char.position()
     f.add(pos, "x").listen()
     f.add(pos, "y").listen()
     f.add(char, 'linear_damping')
 
+    return fn
+
   _fillEnergyFolder: (entity, f) ->
+    energy = entity.energy
+    gui = {}
+    gui.max = energy.max()
+    gui.current = energy.current()
+    gui.strength = energy.strength()
+    gui.max_gui = null
+    gui.current_gui = null
+    gui.strength_gui = null
+
+    updateStrength = () ->
+      gui.strength = energy.strength()
+      gui.strength_gui.updateDisplay()
+
+    updateCurrent = () ->
+      gui.current = energy.current()
+      gui.current_gui.updateDisplay()
+      updateStrength()
+
+    updateMax = () ->
+      gui.max = energy.max()
+      gui.max_gui.updateDisplay()
+      updateCurrent()
+
+    gui.max_gui = f.add(gui, "max").listen()
+    gui.max_gui.onChange((value) ->
+      energy.setMax(value)
+      updateMax())
+    gui.current_gui = f.add(gui, "current").listen()
+    gui.current_gui.onChange((value) ->
+      energy.setCurrent(value)
+      updateCurrent())
+    gui.strength_gui = f.add(gui, "strength").listen()
+    gui.strength_gui.onChange((value) ->
+      energy.setStrength(value)
+      updateStrength())
+
+    return updateMax
 
   _onChangeNewChar: (value) =>
     if value

@@ -728,6 +728,10 @@
 
     DevGui.prototype.selected_char = null;
 
+    DevGui.prototype.sel_update_fn = null;
+
+    DevGui.prototype.con_update_fn = null;
+
     function DevGui(game) {
       var style;
 
@@ -775,6 +779,7 @@
           w = this.select_text.width;
           this.select_text.position.x = Math.round(pos.x - w / 2);
           this.select_text.position.y = Math.round(pos.y - size.h / 2 - 10);
+          this.sel_update_fn();
         } else {
           this.select_text.position.x = -100;
           this.select_text.position.y = 0;
@@ -785,7 +790,8 @@
           size = c.size();
           w = this.control_text.width;
           this.control_text.position.x = Math.round(pos.x - w / 2);
-          return this.control_text.position.y = Math.round(pos.y - size.h / 2 - 10);
+          this.control_text.position.y = Math.round(pos.y - size.h / 2 - 10);
+          return this.con_update_fn();
         } else {
           this.control_text.position.x = -100;
           return this.control_text.position.y = 0;
@@ -894,7 +900,7 @@
       }
       this.sel_char_folder = this.char_folder.addFolder("Selected Character");
       this.sel_char_folder.add(this, "takeControl").listen();
-      return this._fillCharFolder(char, this.sel_char_folder);
+      return this.sel_update_fn = this._fillCharFolder(char, this.sel_char_folder);
     };
 
     DevGui.prototype._removeSelCharFolder = function() {
@@ -916,7 +922,7 @@
         this._removeConCharFolder();
       }
       this.con_char_folder = this.char_folder.addFolder("Controlled Character");
-      return this._fillCharFolder(char, this.con_char_folder);
+      return this.con_update_fn = this._fillCharFolder(char, this.con_char_folder);
     };
 
     DevGui.prototype._removeConCharFolder = function() {
@@ -928,17 +934,59 @@
     };
 
     DevGui.prototype._fillCharFolder = function(char, f) {
-      var ef, pos;
+      var ef, fn, pos;
 
       ef = f.addFolder("Energy");
-      this._fillEnergyFolder(char, ef);
+      fn = this._fillEnergyFolder(char, ef);
       pos = char.position();
       f.add(pos, "x").listen();
       f.add(pos, "y").listen();
-      return f.add(char, 'linear_damping');
+      f.add(char, 'linear_damping');
+      return fn;
     };
 
-    DevGui.prototype._fillEnergyFolder = function(entity, f) {};
+    DevGui.prototype._fillEnergyFolder = function(entity, f) {
+      var energy, gui, updateCurrent, updateMax, updateStrength;
+
+      energy = entity.energy;
+      gui = {};
+      gui.max = energy.max();
+      gui.current = energy.current();
+      gui.strength = energy.strength();
+      gui.max_gui = null;
+      gui.current_gui = null;
+      gui.strength_gui = null;
+      updateStrength = function() {
+        gui.strength = energy.strength();
+        return gui.strength_gui.updateDisplay();
+      };
+      updateCurrent = function() {
+        gui.current = energy.current();
+        gui.current_gui.updateDisplay();
+        return updateStrength();
+      };
+      updateMax = function() {
+        gui.max = energy.max();
+        gui.max_gui.updateDisplay();
+        return updateCurrent();
+      };
+      gui.max_gui = f.add(gui, "max").listen();
+      gui.max_gui.onChange(function(value) {
+        energy.setMax(value);
+        return updateMax();
+      });
+      gui.current_gui = f.add(gui, "current").listen();
+      gui.current_gui.onChange(function(value) {
+        energy.setCurrent(value);
+        return updateCurrent();
+      });
+      gui.strength_gui = f.add(gui, "strength").listen();
+      gui.strength_gui.onChange(function(value) {
+        energy.setStrength(value);
+        return updateStrength();
+      });
+      return updateMax;
+    };
 
     DevGui.prototype._onChangeNewChar = function(value) {
       if (value) {
@@ -1706,10 +1754,6 @@
     };
 
     Game.prototype.onMouseWheel = function(delta) {};
-
-    /* Dev-Mode GUI stuff
-    */
-
 
     return Game;
 
