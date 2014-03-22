@@ -184,11 +184,12 @@ class DevGui
   _fillCharFolder: (char, f) ->
     ef = f.addFolder("Energy")
     fn = @_fillEnergyFolder(char, ef)
+    df = f.addFolder("Movment Damping")
+    @_fillDampingFolder(char, df)
 
     pos = char.position()
     f.add(pos, "x").listen()
     f.add(pos, "y").listen()
-    f.add(char, 'linear_damping')
 
     return fn
 
@@ -230,6 +231,14 @@ class DevGui
       updateStrength())
 
     return updateMax
+
+  _fillDampingFolder: (char, f) ->
+    f.add(char, "fly_move_damp")
+    f.add(char, "fly_not_move_damp")
+    f.add(char, "ground_move_damp")
+    f.add(char, "ground_not_move_damp")
+    f.add(char, "not_ground_move_damp")
+    f.add(char, "not_ground_not_move_damp")
 
   _onChangeNewChar: (value) =>
     if value

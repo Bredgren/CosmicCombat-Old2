@@ -258,7 +258,17 @@
 
     BaseCharacter.prototype.max_vel = 15;
 
-    BaseCharacter.prototype.linear_damping = 10;
+    BaseCharacter.prototype.fly_move_damp = 1;
+
+    BaseCharacter.prototype.fly_not_move_damp = 10;
+
+    BaseCharacter.prototype.ground_move_damp = 1;
+
+    BaseCharacter.prototype.ground_not_move_damp = 10;
+
+    BaseCharacter.prototype.not_ground_move_damp = 1;
+
+    BaseCharacter.prototype.not_ground_not_move_damp = 2;
 
     BaseCharacter.prototype._stage = null;
 
@@ -295,24 +305,24 @@
     }
 
     BaseCharacter.prototype.update = function() {
-      var anti_g, energy_spent, force, imp, jump_cost, on_ground, pos, vel;
+      var anti_g, energy_spent, force, imp, jump_cost, moving, on_ground, pos, vel;
 
       energy_spent = 0;
       vel = this.body.GetLinearVelocity();
       pos = this.body.GetPosition();
       on_ground = this.onGround();
+      moving = true;
       if (!this._blocking) {
         force = this._move_direction.Copy();
         force.Multiply(500);
         this.body.ApplyForce(force, pos);
-        if (force.x === 0 && force.y === 0 && (this._flying || on_ground)) {
-          this.body.SetLinearDamping(this.linear_damping);
-        } else {
-          this.body.SetLinearDamping(0);
+        if (force.x === 0 && force.y === 0) {
+          moving = false;
         }
       }
       jump_cost = this.jump_str * this.jump_cost_ratio;
       if (this._jumping && on_ground && this.energy.strength() > jump_cost) {
+        moving = true;
         imp = new b2Vec2(0, -this.jump_str);
         this.body.ApplyImpulse(imp, pos);
         energy_spent += jump_cost;
@@ -334,6 +344,25 @@
           energy_spent += this.fly_cost;
         } else {
           this.endFly();
+        }
+      }
+      if (on_ground) {
+        if (moving) {
+          this.body.SetLinearDamping(this.ground_move_damp);
+        } else {
+          this.body.SetLinearDamping(this.ground_not_move_damp);
+        }
+      } else if (this._flying) {
+        if (moving) {
+          this.body.SetLinearDamping(this.fly_move_damp);
+        } else {
+          this.body.SetLinearDamping(this.fly_not_move_damp);
+        }
+      } else {
+        if (moving) {
+          this.body.SetLinearDamping(this.not_ground_move_damp);
+        } else {
+          this.body.SetLinearDamping(this.not_ground_not_move_damp);
         }
       }
       return this._updateEnergy(energy_spent);
@@ -928,14 +957,15 @@
     };
 
     DevGui.prototype._fillCharFolder = function(char, f) {
-      var ef, fn, pos;
+      var df, ef, fn, pos;
 
       ef = f.addFolder("Energy");
       fn = this._fillEnergyFolder(char, ef);
+      df = f.addFolder("Movment Damping");
+      this._fillDampingFolder(char, df);
       pos = char.position();
       f.add(pos, "x").listen();
       f.add(pos, "y").listen();
-      f.add(char, 'linear_damping');
       return fn;
     };
 
@@ -980,6 +1010,15 @@
         return updateStrength();
       });
       return updateMax;
+    };
+
+    DevGui.prototype._fillDampingFolder = function(char, f) {
+      f.add(char, "fly_move_damp");
+      f.add(char, "fly_not_move_damp");
+      f.add(char, "ground_move_damp");
+      f.add(char, "ground_not_move_damp");
+      f.add(char, "not_ground_move_damp");
+      return f.add(char, "not_ground_not_move_damp");
     };
 
     DevGui.prototype._onChangeNewChar = function(value) {

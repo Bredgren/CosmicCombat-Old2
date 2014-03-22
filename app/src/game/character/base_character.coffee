@@ -16,7 +16,12 @@ class BaseCharacter
   jump_str: 25
   jump_cost_ratio: 0.1 # energy per unit of jump_str
   max_vel: 15
-  linear_damping: 10
+  fly_move_damp: 1
+  fly_not_move_damp: 10
+  ground_move_damp: 1
+  ground_not_move_damp: 10
+  not_ground_move_damp: 1
+  not_ground_not_move_damp: 2
 
   _stage: null
 
@@ -48,19 +53,18 @@ class BaseCharacter
     vel = @body.GetLinearVelocity()
     pos = @body.GetPosition()
     on_ground = @onGround()
+    moving = true  # deliberate moving
 
     if not @_blocking
       force = @_move_direction.Copy()
       force.Multiply(500)
       @body.ApplyForce(force, pos)
-      # Only apply damping when not being moved
-      if force.x is 0 and force.y is 0 and (@_flying or on_ground)
-        @body.SetLinearDamping(@linear_damping)
-      else
-        @body.SetLinearDamping(0)
+      if force.x is 0 and force.y is 0
+        moving = false
 
     jump_cost = @jump_str * @jump_cost_ratio
     if @_jumping and on_ground and @energy.strength() > jump_cost
+      moving = true
       imp = new b2Vec2(0, -@jump_str)
       @body.ApplyImpulse(imp, pos)
       energy_spent += jump_cost
@@ -83,6 +87,22 @@ class BaseCharacter
         energy_spent += @fly_cost
       else
         @endFly()
+
+    if on_ground
+      if moving
+        @body.SetLinearDamping(@ground_move_damp)
+      else
+        @body.SetLinearDamping(@ground_not_move_damp)
+    else if @_flying
+      if moving
+        @body.SetLinearDamping(@fly_move_damp)
+      else
+        @body.SetLinearDamping(@fly_not_move_damp)
+    else
+      if moving
+        @body.SetLinearDamping(@not_ground_move_damp)
+      else
+        @body.SetLinearDamping(@not_ground_not_move_damp)
 
     @_updateEnergy(energy_spent)
 
