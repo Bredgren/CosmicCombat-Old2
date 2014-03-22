@@ -242,3 +242,22 @@ class BaseCharacter
       @energy.incMax(improve_amount)
 
     @energy.incStrength(@_power_up * @energy.max())
+
+  _createBody: (pos) ->
+    bodyDef = new b2Dynamics.b2BodyDef()
+    bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody
+    @body = @universe.world.CreateBody(bodyDef)
+
+    box = new b2Shapes.b2PolygonShape()
+    box.SetAsBox(@_w, @_h)
+    @_body_box = @body.CreateFixture2(box, 5)
+
+    circle = new b2Shapes.b2CircleShape(@_w)
+    circle.SetLocalPosition(new b2Vec2(0, @_h))
+    @_body_circle = @body.CreateFixture2(circle, 0)
+    @_body_circle.SetRestitution(0)
+
+    @body.SetBullet(true)
+    @body.SetFixedRotation(true)
+    if pos
+      @body.SetPosition(pos)

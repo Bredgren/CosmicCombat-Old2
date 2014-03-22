@@ -536,6 +536,26 @@
       return this.energy.incStrength(this._power_up * this.energy.max());
     };
 
+    BaseCharacter.prototype._createBody = function(pos) {
+      var bodyDef, box, circle;
+
+      bodyDef = new b2Dynamics.b2BodyDef();
+      bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
+      this.body = this.universe.world.CreateBody(bodyDef);
+      box = new b2Shapes.b2PolygonShape();
+      box.SetAsBox(this._w, this._h);
+      this._body_box = this.body.CreateFixture2(box, 5);
+      circle = new b2Shapes.b2CircleShape(this._w);
+      circle.SetLocalPosition(new b2Vec2(0, this._h));
+      this._body_circle = this.body.CreateFixture2(circle, 0);
+      this._body_circle.SetRestitution(0);
+      this.body.SetBullet(true);
+      this.body.SetFixedRotation(true);
+      if (pos) {
+        return this.body.SetPosition(pos);
+      }
+    };
+
     return BaseCharacter;
 
   })();
@@ -548,8 +568,7 @@
     Jackie.prototype.improve_rate = 0.05;
 
     function Jackie(universe, init_pos, click_callback) {
-      var bodyDef, box, circle,
-        _this = this;
+      var _this = this;
 
       Jackie.__super__.constructor.call(this, universe, init_pos, click_callback);
       this.stand = PIXI.Sprite.fromFrame("jackie_stand_01");
@@ -563,19 +582,7 @@
       this._w = .4;
       this._h = .5;
       this._offset = .1;
-      bodyDef = new b2Dynamics.b2BodyDef();
-      bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
-      this.body = this.universe.world.CreateBody(bodyDef);
-      box = new b2Shapes.b2PolygonShape();
-      box.SetAsBox(this._w, this._h);
-      this._body_box = this.body.CreateFixture2(box, 5);
-      circle = new b2Shapes.b2CircleShape(this._w);
-      circle.SetLocalPosition(new b2Vec2(0, this._h));
-      this._body_circle = this.body.CreateFixture2(circle, 0);
-      this._body_circle.SetRestitution(0);
-      this.body.SetBullet(true);
-      this.body.SetFixedRotation(true);
-      this.body.SetPosition(init_pos);
+      this._createBody(init_pos);
     }
 
     Jackie.prototype.update = function() {
@@ -605,8 +612,7 @@
     Goku.prototype.improve_rate = 0.2;
 
     function Goku(universe, init_pos, click_callback) {
-      var bodyDef, box, circle,
-        _this = this;
+      var _this = this;
 
       Goku.__super__.constructor.call(this, universe, init_pos, click_callback);
       this._jump_str = 15;
@@ -621,19 +627,7 @@
       this._w = .3;
       this._h = .4;
       this._offset = 0;
-      bodyDef = new b2Dynamics.b2BodyDef();
-      bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
-      this.body = this.universe.world.CreateBody(bodyDef);
-      box = new b2Shapes.b2PolygonShape();
-      box.SetAsBox(this._w, this._h);
-      this._body_box = this.body.CreateFixture2(box, 5);
-      circle = new b2Shapes.b2CircleShape(this._w);
-      circle.SetLocalPosition(new b2Vec2(0, this._h));
-      this._body_circle = this.body.CreateFixture2(circle, 0);
-      this._body_circle.SetRestitution(0);
-      this.body.SetBullet(true);
-      this.body.SetFixedRotation(true);
-      this.body.SetPosition(init_pos);
+      this._createBody(init_pos);
     }
 
     Goku.prototype.update = function() {
