@@ -523,6 +523,19 @@
       return this.endBlock();
     };
 
+    BaseCharacter.prototype.recoverPercent = function(amount) {
+      var current, target, _results;
+
+      current = this.energy.current() / this.energy.max();
+      target = Math.min(current + amount, 1);
+      _results = [];
+      while (current < target) {
+        this._updateEnergy(0);
+        _results.push(current = this.energy.current() / this.energy.max());
+      }
+      return _results;
+    };
+
     BaseCharacter.prototype._stopMoveX = function() {
       var vel;
 
@@ -934,6 +947,13 @@
       return this.sel_char_folder = void 0;
     };
 
+    DevGui.prototype.restore25 = function() {
+      var char;
+
+      char = this.game.getControlledCharacter();
+      return char.recoverPercent(.25);
+    };
+
     DevGui.prototype._createConCharFolder = function() {
       var char;
 
@@ -945,7 +965,8 @@
         this._removeConCharFolder();
       }
       this.con_char_folder = this.char_folder.addFolder("Controlled Character");
-      return this.con_update_fn = this._fillCharFolder(char, this.con_char_folder);
+      this.con_update_fn = this._fillCharFolder(char, this.con_char_folder);
+      return this.con_char_folder.add(this, "restore25");
     };
 
     DevGui.prototype._removeConCharFolder = function() {

@@ -166,6 +166,10 @@ class DevGui
     @char_folder.removeFolder(@sel_char_folder)
     @sel_char_folder = undefined
 
+  restore25: () ->
+    char = @game.getControlledCharacter()
+    char.recoverPercent(.25)
+
   _createConCharFolder: () ->
     char = @game.getControlledCharacter()
     if not char then return
@@ -175,6 +179,7 @@ class DevGui
 
     @con_char_folder = @char_folder.addFolder("Controlled Character")
     @con_update_fn = @_fillCharFolder(char, @con_char_folder)
+    @con_char_folder.add(@, "restore25")
 
   _removeConCharFolder: () ->
     if not @con_char_folder then return

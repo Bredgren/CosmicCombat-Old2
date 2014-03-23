@@ -229,6 +229,14 @@ class BaseCharacter
     @endPowerDown()
     @endBlock()
 
+  # amount [Number] between 0 and 1
+  recoverPercent: (amount) ->
+    current = @energy.current() / @energy.max()
+    target = Math.min(current + amount, 1)
+    while current < target
+      @_updateEnergy(0)
+      current = @energy.current() / @energy.max()
+
   _stopMoveX: () ->
     vel = @body.GetLinearVelocity()
     vel.x = 0
