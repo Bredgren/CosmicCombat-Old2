@@ -268,6 +268,11 @@ class BaseCharacter
     if recovered_amount > 0
       improve_amount = @improve_rate * recovered_amount
       @energy.incMax(improve_amount)
+    # We still want to improve when current is equal to max and we spend less
+    # energy than the amount we recover.
+    else if spent > 0 and recover_amount > 0
+      improve_amount = @improve_rate * recover_amount
+      @energy.incMax(improve_amount)
 
     @energy.incStrength(@_power_up * @energy.max())
 

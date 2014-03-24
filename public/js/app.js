@@ -574,6 +574,9 @@
       if (recovered_amount > 0) {
         improve_amount = this.improve_rate * recovered_amount;
         this.energy.incMax(improve_amount);
+      } else if (spent > 0 && recover_amount > 0) {
+        improve_amount = this.improve_rate * recover_amount;
+        this.energy.incMax(improve_amount);
       }
       return this.energy.incStrength(this._power_up * this.energy.max());
     };
