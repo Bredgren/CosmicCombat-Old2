@@ -384,23 +384,14 @@
     BaseCharacter.prototype.size = function() {};
 
     BaseCharacter.prototype.onGround = function() {
-      var a, b, below, contact, manifold, p, pos, _i, _len, _ref;
+      var a, b, contact;
 
       contact = this.universe.world.GetContactList();
       while (contact) {
         a = contact.GetFixtureA();
         b = contact.GetFixtureB();
-        if (contact.IsTouching() && (a === this._body_circle || b === this._body_circle)) {
-          pos = this.body.GetPosition();
-          manifold = new b2Collision.b2WorldManifold();
-          contact.GetWorldManifold(manifold);
-          below = true;
-          _ref = manifold.m_points;
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            p = _ref[_i];
-            below &= p.y > (pos.y + this._h + .1);
-          }
-          return below;
+        if (contact.IsTouching() && (a === this._ground_sensor || b === this._ground_sensor)) {
+          return true;
         }
         contact = contact.GetNext();
       }
@@ -585,7 +576,7 @@
     };
 
     BaseCharacter.prototype._createBody = function(pos) {
-      var bodyDef, box, circle;
+      var bodyDef, box, circle, fixDef, h, offx, offy, v, w;
 
       bodyDef = new b2Dynamics.b2BodyDef();
       bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
@@ -593,10 +584,20 @@
       box = new b2Shapes.b2PolygonShape();
       box.SetAsBox(this._w, this._h);
       this._body_box = this.body.CreateFixture2(box, 5);
-      circle = new b2Shapes.b2CircleShape(this._w);
+      circle = new b2Shapes.b2CircleShape(this._w + 0.01);
       circle.SetLocalPosition(new b2Vec2(0, this._h));
       this._body_circle = this.body.CreateFixture2(circle, 0);
       this._body_circle.SetRestitution(0);
+      fixDef = new b2Dynamics.b2FixtureDef();
+      w = this._w * 0.8;
+      h = this._h * 0.1;
+      offx = 0;
+      offy = this._h + this._w;
+      v = [new b2Vec2(-w + offx, -h + offy), new b2Vec2(w + offx, -h + offy), new b2Vec2(w + offx, h + offy), new b2Vec2(-w + offx, h + offy)];
+      fixDef.shape = b2Shapes.b2PolygonShape.AsArray(v, 4);
+      fixDef.density = 0;
+      fixDef.isSensor = true;
+      this._ground_sensor = this.body.CreateFixture(fixDef);
       this.body.SetBullet(true);
       this.body.SetFixedRotation(true);
       if (pos) {
@@ -1382,6 +1383,14 @@
       fixDef.friction = 0.5;
       fixDef.restitution = 0.2;
       fixDef.shape = new b2Shapes.b2CircleShape(1);
+      this.world.CreateBody(bodyDef).CreateFixture(fixDef);
+      bodyDef.position.x = 10;
+      bodyDef.position.y = -10;
+      fixDef.density = 2.0;
+      fixDef.friction = 0.7;
+      fixDef.restitution = 0.2;
+      fixDef.shape = new b2Shapes.b2PolygonShape();
+      fixDef.shape.SetAsBox(2, 2);
       this.world.CreateBody(bodyDef).CreateFixture(fixDef);
     }
 

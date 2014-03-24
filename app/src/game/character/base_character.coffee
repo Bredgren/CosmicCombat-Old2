@@ -123,15 +123,8 @@ class BaseCharacter
     while contact
       a = contact.GetFixtureA()
       b = contact.GetFixtureB()
-      if contact.IsTouching() and (a == @_body_circle or b == @_body_circle)
-        pos = @body.GetPosition()
-        manifold = new b2Collision.b2WorldManifold()
-        contact.GetWorldManifold(manifold)
-        # Only register contacts with bottom half of circle
-        below = true
-        for p in manifold.m_points
-          below &= (p.y > (pos.y + @_h + .1))
-        return below
+      if contact.IsTouching() and (a == @_ground_sensor or b == @_ground_sensor)
+        return true
       contact = contact.GetNext()
     return false
 
@@ -149,7 +142,6 @@ class BaseCharacter
         @_move_direction.y = 1
       else
         @_move_direction.y = 0
-        # @_stopMoveY()
 
   startDown: () ->
     if @_flying
@@ -163,7 +155,6 @@ class BaseCharacter
         @_move_direction.y = -1
       else
         @_move_direction.y = 0
-        # @_stopMoveY()
 
   startFly: () ->
     if @energy.strength() >= @fly_cost
@@ -287,10 +278,22 @@ class BaseCharacter
     box.SetAsBox(@_w, @_h)
     @_body_box = @body.CreateFixture2(box, 5)
 
-    circle = new b2Shapes.b2CircleShape(@_w)
+    circle = new b2Shapes.b2CircleShape(@_w+0.01) #.01 prevents catching on box
     circle.SetLocalPosition(new b2Vec2(0, @_h))
     @_body_circle = @body.CreateFixture2(circle, 0)
     @_body_circle.SetRestitution(0)
+
+    fixDef = new b2Dynamics.b2FixtureDef()
+    w = @_w * 0.8
+    h = @_h * 0.1
+    offx = 0
+    offy = @_h + @_w
+    v = [new b2Vec2(-w + offx, -h + offy), new b2Vec2(w + offx, -h + offy),
+      new b2Vec2(w + offx, h + offy), new b2Vec2(-w + offx, h + offy)]
+    fixDef.shape = b2Shapes.b2PolygonShape.AsArray(v, 4)
+    fixDef.density = 0
+    fixDef.isSensor = true
+    @_ground_sensor = @body.CreateFixture(fixDef)
 
     @body.SetBullet(true)
     @body.SetFixedRotation(true)

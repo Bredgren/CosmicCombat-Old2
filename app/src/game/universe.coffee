@@ -60,6 +60,18 @@ class Universe
 
     @world.CreateBody(bodyDef).CreateFixture(fixDef)
 
+    bodyDef.position.x = 10
+    bodyDef.position.y = -10
+
+    fixDef.density = 2.0
+    fixDef.friction = 0.7
+    fixDef.restitution = 0.2
+    fixDef.shape = new b2Shapes.b2PolygonShape()
+    fixDef.shape.SetAsBox(2, 2)
+
+    @world.CreateBody(bodyDef).CreateFixture(fixDef)
+
+
   update: () ->
     c.update() for c in @characters
     @_wrapObjects()
