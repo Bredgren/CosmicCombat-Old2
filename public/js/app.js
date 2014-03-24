@@ -14,8 +14,9 @@
     HEIGHT: 700,
     PPM: 30,
     STAR_COUNT: 50,
-    STAR_MIN_DEPTH: 0.01,
+    STAR_MIN_DEPTH: 1,
     STAR_MAX_DEPTH: 0,
+    STAR_MAX_SIZE: 2,
     BOX2D_TIME_STEP: 1 / 60,
     BOX2D_VI: 10,
     BOX2D_PI: 10,
@@ -1131,6 +1132,10 @@
           z: (Math.random() * (this.min_depth - this.max_depth)) + this.max_depth
         };
         this._stars.push(star);
+        this._prev_camera_pos = {
+          x: this.camera.x,
+          y: this.camera.y
+        };
       }
     }
 
@@ -1139,32 +1144,39 @@
     };
 
     StarField.prototype.draw = function() {
-      var pos, s, star, world_pos, _i, _len, _ref, _results;
+      var dx, dy, r, s, star, _i, _len, _ref;
 
+      dx = this.camera.x - this._prev_camera_pos.x;
+      dy = this.camera.y - this._prev_camera_pos.y;
+      if (dx > 5 || dx < -5) {
+        dx = 0;
+      }
+      if (dy > 5 || dy < -5) {
+        dy = 0;
+      }
       _ref = this._stars;
-      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         star = _ref[_i];
-        world_pos = this.camera.screenToWorld(star);
-        pos = {
-          x: world_pos.x - this.camera.x * star.z,
-          y: world_pos.y - this.camera.y * star.z
-        };
-        pos = this.camera.worldToScreen(pos);
-        pos.x = pos.x % this.camera.w;
-        pos.y = pos.y % this.camera.h;
-        if (pos.x < 0) {
-          pos.x += this.camera.w;
+        r = star.z / (this.min_depth - this.max_depth);
+        star.x -= dx - (dx * r);
+        star.y -= dy - (dy * r);
+        star.x = star.x % this.camera.w;
+        star.y = star.y % this.camera.h;
+        if (star.x < 0) {
+          star.x += this.camera.w;
         }
-        if (pos.y < 0) {
-          pos.y += this.camera.h;
+        if (star.y < 0) {
+          star.y += this.camera.h;
         }
-        s = (star.z / (this.min_depth - this.max_depth)) * 2 + 1;
+        s = settings.STAR_MAX_SIZE - r * settings.STAR_MAX_SIZE;
         this._g.beginFill(0xFFFFFF);
-        this._g.drawRect(pos.x, pos.y, s, s);
-        _results.push(this._g.endFill());
+        this._g.drawRect(Math.round(star.x), Math.round(star.y), s, s);
+        this._g.endFill();
       }
-      return _results;
+      return this._prev_camera_pos = {
+        x: this.camera.x,
+        y: this.camera.y
+      };
     };
 
     return StarField;
@@ -1456,9 +1468,9 @@
     Universe.prototype.getBounds = function() {
       return {
         x: -this.__terrain_width / 2,
-        y: -this.__terrain_width,
+        y: -this.__terrain_width * 2,
         w: this.__terrain_width,
-        h: this.__terrain_width + 10
+        h: this.__terrain_width * 2 + 10
       };
     };
 

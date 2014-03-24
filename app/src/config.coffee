@@ -8,8 +8,9 @@ settings = {
   PPM: 30  # pixels per meter
 
   STAR_COUNT: 50
-  STAR_MIN_DEPTH: 0.01
+  STAR_MIN_DEPTH: 1
   STAR_MAX_DEPTH: 0
+  STAR_MAX_SIZE: 2
 
   BOX2D_TIME_STEP: 1 / 60
   BOX2D_VI: 10  # Velocity iterations

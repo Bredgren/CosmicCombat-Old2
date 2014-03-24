@@ -120,9 +120,9 @@ class Universe
   getBounds: () ->
     return {
       x: -@__terrain_width / 2
-      y: -@__terrain_width
+      y: -@__terrain_width * 2
       w: @__terrain_width
-      h: @__terrain_width + 10
+      h: @__terrain_width * 2 + 10
     }
 
   # Takes a point [{x, y}] and returns a new point whose values are wrapped
