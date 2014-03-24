@@ -61,6 +61,8 @@ class BaseCharacter
       @body.ApplyForce(force, pos)
       if force.x is 0 and force.y is 0
         moving = false
+    else
+      moving = false
 
     jump_cost = @jump_str * @jump_cost_ratio
     if @_jumping and on_ground and @energy.strength() > jump_cost

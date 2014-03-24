@@ -320,6 +320,8 @@
         if (force.x === 0 && force.y === 0) {
           moving = false;
         }
+      } else {
+        moving = false;
       }
       jump_cost = this.jump_str * this.jump_cost_ratio;
       if (this._jumping && on_ground && this.energy.strength() > jump_cost) {
