@@ -48,11 +48,11 @@ class Game
     @hud_stage.addChild(@hud_graphics)
 
     @camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT)
-    @universe = new Universe(@, @debug_graphics, @camera)
-    @_dev_gui = new DevGui(@)
-
+    # starfield first so stars are behind atmosphere
     @_starfield = new StarField(@camera, @bg_stage, settings.STAR_COUNT,
       settings.STAR_MIN_DEPTH, settings.STAR_MAX_DEPTH)
+    @universe = new Universe(@, @debug_graphics, @camera)
+    @_dev_gui = new DevGui(@)
 
     @_new_char_options.pos.x = -8
     @_new_char_options.pos.y = -10

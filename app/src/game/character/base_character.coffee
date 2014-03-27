@@ -124,6 +124,7 @@ class BaseCharacter
       a = contact.GetFixtureA()
       b = contact.GetFixtureB()
       if contact.IsTouching() and (a == @_ground_sensor or b == @_ground_sensor)
+        # todo: and other is terrain
         return true
       contact = contact.GetNext()
     return false

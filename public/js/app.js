@@ -1330,16 +1330,149 @@
 
   })(b2Dynamics.b2DebugDraw);
 
+  Planet = (function() {
+    Planet.prototype.gravity = null;
+
+    Planet.prototype.size = 100;
+
+    Planet.prototype.depth = 10;
+
+    Planet.prototype.terrain = [];
+
+    Planet.prototype.characters = [];
+
+    Planet.prototype._background = null;
+
+    function Planet(universe, size) {
+      this.universe = universe;
+      this.size = size;
+      this.size = this._getRoundedSize(this.size);
+      this.gravity = new b2Vec2(0, this._getGravity(this.size));
+      this.depth = this.size / (2 * Math.PI);
+      this.world = this.universe.world;
+      this._initTerrain();
+      this._initBackground();
+    }
+
+    Planet.prototype.update = function() {};
+
+    Planet.prototype.draw = function() {};
+
+    Planet.prototype.getBounds = function() {
+      return {
+        x: -this.size / 2,
+        y: -this.size * 2,
+        w: this.size,
+        h: this.size * 2 + this.depth
+      };
+    };
+
+    Planet.prototype.load = function() {
+      return this._loadTerrain();
+    };
+
+    Planet.prototype.unload = function() {
+      return this._unloadTerrain();
+    };
+
+    Planet.prototype._initTerrain = function() {
+      var cx, cy, h, w;
+
+      w = this.size / 2;
+      h = this.depth / 2;
+      cx = 0;
+      cy = h;
+      return this.terrain = [
+        [
+          {
+            x: cx - w,
+            y: cy - h
+          }, {
+            x: cx + w,
+            y: cy - h
+          }, {
+            x: cx + w,
+            y: cy + h
+          }, {
+            x: cx - w,
+            y: cy + h
+          }
+        ]
+      ];
+    };
+
+    Planet.prototype._updateTerrainBody = function() {
+      this._unloadTerrain();
+      return this._loadTerrain();
+    };
+
+    Planet.prototype._loadTerrain = function() {
+      var bodyDef, fixDef, poly, shape, v, _i, _j, _len, _len1, _ref, _results;
+
+      bodyDef = new b2Dynamics.b2BodyDef();
+      bodyDef.type = b2Dynamics.b2Body.b2_staticBody;
+      bodyDef.userData = "Terrain";
+      fixDef = new b2Dynamics.b2FixtureDef();
+      fixDef.density = 1.0;
+      fixDef.friction = 0.5;
+      fixDef.restitution = 0;
+      _ref = this.terrain;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        poly = _ref[_i];
+        fixDef.shape = new b2Shapes.b2PolygonShape();
+        shape = [];
+        for (_j = 0, _len1 = poly.length; _j < _len1; _j++) {
+          v = poly[_j];
+          shape.push(new b2Vec2(v.x, v.y));
+        }
+        fixDef.shape.SetAsArray(shape, shape.length);
+        _results.push(this.world.CreateBody(bodyDef).CreateFixture(fixDef));
+      }
+      return _results;
+    };
+
+    Planet.prototype._unloadTerrain = function() {
+      var body, data, _results;
+
+      body = this.world.GetBodyList();
+      _results = [];
+      while (body) {
+        data = body.GetUserData();
+        if (data && data === "Terrain") {
+          this.world.DestroyBody(body);
+        }
+        _results.push(body = body.GetNext());
+      }
+      return _results;
+    };
+
+    Planet.prototype._initBackground = function() {
+      return this._background = new PIXI.RenderTexture();
+    };
+
+    Planet.prototype._getGravity = function(size) {
+      return size / 5;
+    };
+
+    Planet.prototype._getRoundedSize = function(size) {
+      return size;
+    };
+
+    return Planet;
+
+  })();
+
   Universe = (function() {
     Universe.prototype.planets = [];
+
+    Universe.prototype.current_planet = null;
 
     Universe.prototype.characters = [];
 
     Universe.prototype.debug_draw_enabled = false;
 
     Universe.prototype._debug_drawer = null;
-
-    Universe.prototype.__terrain_width = 100;
 
     Universe.prototype.db_draw_flags = {
       aabb: b2DebugDraw.e_aabbBit,
@@ -1351,17 +1484,32 @@
     };
 
     function Universe(game, graphics, camera) {
-      var atm_tex, bodyDef, doSleep, fixDef, gravity;
+      var atm_tex, atm_w, bodyDef, doSleep, fixDef, gravity, w;
 
       this.game = game;
       this.graphics = graphics;
       this.camera = camera;
       gravity = new b2Vec2(0, 20);
       this.world = new b2Dynamics.b2World(gravity, doSleep = true);
+      this.current_planet = new Planet(this, 100);
+      this.current_planet.load();
       atm_tex = PIXI.Texture.fromImage("assets/img/atmosphere.png");
-      this._atm = new PIXI.TilingSprite(atm_tex, settings.WIDTH, 3000);
-      this._atm.position.x = 0;
-      this._atm.position.y = 0;
+      w = {
+        x: this.current_planet.size,
+        y: 0
+      };
+      atm_w = this.camera.worldToScreenUnits(w).x + settings.WIDTH + 20;
+      this._atm = new PIXI.TilingSprite(atm_tex, atm_w, atm_tex.height);
+      this._atm.tilePosition.y = -1;
+      this._atm_pos = {
+        x: -atm_w / 2,
+        y: 0
+      };
+      this._atm_pos = this.camera.screenToWorldUnits(this._atm_pos);
+      this._atm.position.x = this._atm_pos.x;
+      this._atm.position.y = this._atm_pos.y;
+      this._atm.anchor.x = 0;
+      this._atm.anchor.y = 1;
       this.game.bg_stage.addChild(this._atm);
       this._debug_drawer = new DebugDraw(this.camera);
       this._debug_drawer.SetSprite(this.graphics);
@@ -1371,9 +1519,6 @@
       this._debug_drawer.SetLineThickness(1.0);
       this._debug_drawer.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit | b2DebugDraw.e_centerOfMassBit | b2DebugDraw.e_controllerBit | b2DebugDraw.e_pairBit | b2DebugDraw.e_aabbBit);
       this.world.SetDebugDraw(this._debug_drawer);
-      this._terrain = [];
-      this._createTerrain();
-      this._updateTerrainBody();
       bodyDef = new b2Dynamics.b2BodyDef();
       bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
       bodyDef.position.x = 0;
@@ -1408,22 +1553,25 @@
     };
 
     Universe.prototype._wrapObjects = function() {
-      var body, new_pos, _results;
+      var body, new_camera_pos, new_pos;
 
       body = this.world.GetBodyList();
-      _results = [];
       while (body) {
         new_pos = this.boundedPoint(body.GetPosition());
         body.SetPosition(new b2Vec2(new_pos.x, new_pos.y));
-        _results.push(body = body.GetNext());
+        body = body.GetNext();
       }
-      return _results;
+      new_camera_pos = this.boundedPoint(this.camera);
+      this.camera.x = new_camera_pos.x;
+      return this.camera.y = new_camera_pos.y;
     };
 
     Universe.prototype.draw = function() {
-      var c, _i, _len, _ref;
+      var atm_screen, c, _i, _len, _ref;
 
-      this._atm.position.y = -this.camera.worldToScreenUnits(this.camera).y - 2500;
+      atm_screen = this.camera.worldToScreen(this._atm_pos);
+      this._atm.position.x = atm_screen.x;
+      this._atm.position.y = atm_screen.y;
       _ref = this.characters;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         c = _ref[_i];
@@ -1477,12 +1625,7 @@
     };
 
     Universe.prototype.getBounds = function() {
-      return {
-        x: -this.__terrain_width / 2,
-        y: -this.__terrain_width * 2,
-        w: this.__terrain_width,
-        h: this.__terrain_width * 2 + 10
-      };
+      return this.current_planet.getBounds();
     };
 
     Universe.prototype.boundedPoint = function(point, bounds) {
@@ -1529,66 +1672,6 @@
       character = Characters.newCharacter(this, pos, type, callback);
       this.characters.push(character);
       return character;
-    };
-
-    Universe.prototype._createTerrain = function() {
-      var cx, cy, h, w;
-
-      w = this.__terrain_width / 2;
-      h = 10 / 2;
-      cx = 0;
-      cy = h;
-      return this._terrain = [
-        [
-          {
-            x: cx - w,
-            y: cy - h
-          }, {
-            x: cx + w,
-            y: cy - h
-          }, {
-            x: cx + w,
-            y: cy + h
-          }, {
-            x: cx - w,
-            y: cy + h
-          }
-        ]
-      ];
-    };
-
-    Universe.prototype._updateTerrainBody = function() {
-      var body, bodyDef, data, fixDef, poly, shape, v, _i, _j, _len, _len1, _ref, _results;
-
-      body = this.world.GetBodyList();
-      while (body) {
-        data = body.GetUserData();
-        if (data && data === "Terrain") {
-          this.world.DestroyBody(body);
-        }
-        body = body.GetNext();
-      }
-      bodyDef = new b2Dynamics.b2BodyDef();
-      bodyDef.type = b2Dynamics.b2Body.b2_staticBody;
-      bodyDef.userData = "Terrain";
-      fixDef = new b2Dynamics.b2FixtureDef();
-      fixDef.density = 1.0;
-      fixDef.friction = 0.5;
-      fixDef.restitution = 0;
-      _ref = this._terrain;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        poly = _ref[_i];
-        fixDef.shape = new b2Shapes.b2PolygonShape();
-        shape = [];
-        for (_j = 0, _len1 = poly.length; _j < _len1; _j++) {
-          v = poly[_j];
-          shape.push(new b2Vec2(v.x, v.y));
-        }
-        fixDef.shape.SetAsArray(shape, shape.length);
-        _results.push(this.world.CreateBody(bodyDef).CreateFixture(fixDef));
-      }
-      return _results;
     };
 
     return Universe;
@@ -1649,9 +1732,9 @@
       this.debug_stage.addChild(this.debug_graphics);
       this.hud_stage.addChild(this.hud_graphics);
       this.camera = new Camera(0, 0, settings.WIDTH, settings.HEIGHT);
+      this._starfield = new StarField(this.camera, this.bg_stage, settings.STAR_COUNT, settings.STAR_MIN_DEPTH, settings.STAR_MAX_DEPTH);
       this.universe = new Universe(this, this.debug_graphics, this.camera);
       this._dev_gui = new DevGui(this);
-      this._starfield = new StarField(this.camera, this.bg_stage, settings.STAR_COUNT, settings.STAR_MIN_DEPTH, settings.STAR_MAX_DEPTH);
       this._new_char_options.pos.x = -8;
       this._new_char_options.pos.y = -10;
       this._new_char_options.type = Characters.JACKIE;
@@ -1988,13 +2071,6 @@
       return console.log.apply(console, args);
     }
   };
-
-  Planet = (function() {
-    function Planet() {}
-
-    return Planet;
-
-  })();
 
   ParticleSystem = (function() {
     function ParticleSystem(max_particles, update_fn, draw_fn) {

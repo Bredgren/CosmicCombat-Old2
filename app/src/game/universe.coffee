@@ -2,16 +2,16 @@
 #_require ../config
 #_require ../global
 #_require ../util
-#_require ./debug_draw
 #_require ./character/characters
+#_require ./debug_draw
+#_require ./planet
 
 class Universe
   planets: []
+  current_planet: null
   characters: []
   debug_draw_enabled: false
   _debug_drawer: null
-
-  __terrain_width: 100
 
   db_draw_flags:
     aabb: b2DebugDraw.e_aabbBit
@@ -24,11 +24,23 @@ class Universe
   constructor: (@game, @graphics, @camera) ->
     gravity = new b2Vec2(0, 20)
     @world = new b2Dynamics.b2World(gravity, doSleep=true)
+    @current_planet = new Planet(@, 100)
+    @current_planet.load()
 
     atm_tex = PIXI.Texture.fromImage("assets/img/atmosphere.png")
-    @_atm = new PIXI.TilingSprite(atm_tex, settings.WIDTH, 3000)
-    @_atm.position.x = 0
-    @_atm.position.y = 0
+    w = {x: @current_planet.size, y: 0}
+    # 20px buffer to prevent edge flicker when crossing to other side
+    atm_w = @camera.worldToScreenUnits(w).x + settings.WIDTH + 20
+    @_atm = new PIXI.TilingSprite(atm_tex, atm_w, atm_tex.height)
+    @_atm.tilePosition.y = -1  # Fixes out of place pixel row on top
+    @_atm_pos =
+      x: -atm_w / 2
+      y: 0
+    @_atm_pos = @camera.screenToWorldUnits(@_atm_pos)
+    @_atm.position.x = @_atm_pos.x
+    @_atm.position.y = @_atm_pos.y
+    @_atm.anchor.x = 0
+    @_atm.anchor.y = 1
     @game.bg_stage.addChild(@_atm)
 
     @_debug_drawer = new DebugDraw(@camera)
@@ -42,10 +54,6 @@ class Universe
       b2DebugDraw.e_centerOfMassBit | b2DebugDraw.e_controllerBit |
       b2DebugDraw.e_pairBit | b2DebugDraw.e_aabbBit)
     @world.SetDebugDraw(@_debug_drawer)
-
-    @_terrain = []
-    @_createTerrain()
-    @_updateTerrainBody()
 
     bodyDef = new b2Dynamics.b2BodyDef()
     bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody
@@ -71,13 +79,11 @@ class Universe
 
     @world.CreateBody(bodyDef).CreateFixture(fixDef)
 
-
   update: () ->
     c.update() for c in @characters
     @_wrapObjects()
     @world.Step(settings.BOX2D_TIME_STEP, settings.BOX2D_VI, settings.BOX2D_PI)
     @world.ClearForces()
-
 
   _wrapObjects: () ->
     body = @world.GetBodyList()
@@ -85,9 +91,15 @@ class Universe
       new_pos = @boundedPoint(body.GetPosition())
       body.SetPosition(new b2Vec2(new_pos.x, new_pos.y))
       body = body.GetNext()
+    new_camera_pos = @boundedPoint(@camera)
+    @camera.x = new_camera_pos.x
+    @camera.y = new_camera_pos.y
 
   draw: () ->
-    @_atm.position.y = -@camera.worldToScreenUnits(@camera).y - 2500
+    # @_atm.position.y = -@camera.worldToScreenUnits(@camera).y - 2500
+    atm_screen = @camera.worldToScreen(@_atm_pos)
+    @_atm.position.x = atm_screen.x
+    @_atm.position.y = atm_screen.y
     c.draw() for c in @characters
     if @debug_draw_enabled
       @world.DrawDebugData()
@@ -130,12 +142,7 @@ class Universe
     return screen_alt_pos
 
   getBounds: () ->
-    return {
-      x: -@__terrain_width / 2
-      y: -@__terrain_width * 2
-      w: @__terrain_width
-      h: @__terrain_width * 2 + 10
-    }
+    return @current_planet.getBounds()
 
   # Takes a point [{x, y}] and returns a new point whose values are wrapped
   # Astroids-style within the space specified by the given bounds or getBounds()
@@ -147,9 +154,6 @@ class Universe
     y = boundedValue(point.y, bounds.y, bounds.y + bounds.h)
 
     return {x: x, y: y}
-
-  # toggleDebugDraw: () ->
-  #   @_debug_draw = not @_debug_draw
 
   addDebugDrawFlag: (flag) ->
     flags = @_debug_drawer.GetFlags()
@@ -176,37 +180,3 @@ class Universe
     character = Characters.newCharacter(@, pos, type, callback)
     @characters.push(character)
     return character
-
-  _createTerrain: () ->
-    w = @__terrain_width / 2
-    h = 10 / 2
-    cx = 0
-    cy = h
-    @_terrain = [[{x: cx - w, y: cy - h}, {x: cx + w, y: cy - h},
-                  {x: cx + w, y: cy + h}, {x: cx - w, y: cy + h}]]
-
-  _updateTerrainBody: () ->
-    # Remove current body
-    body = @world.GetBodyList()
-    while body
-      data = body.GetUserData()
-      if data and data == "Terrain"
-        @world.DestroyBody(body)
-      body = body.GetNext()
-
-    # Add body to match current _terrain
-    bodyDef = new b2Dynamics.b2BodyDef()
-    bodyDef.type = b2Dynamics.b2Body.b2_staticBody
-    bodyDef.userData = "Terrain"
-
-    fixDef = new b2Dynamics.b2FixtureDef()
-    fixDef.density = 1.0
-    fixDef.friction = 0.5
-    fixDef.restitution = 0 #0.2
-    for poly in @_terrain
-      fixDef.shape = new b2Shapes.b2PolygonShape()
-      shape = []
-      for v in poly
-        shape.push(new b2Vec2(v.x, v.y))
-      fixDef.shape.SetAsArray(shape, shape.length)
-      @world.CreateBody(bodyDef).CreateFixture(fixDef)
