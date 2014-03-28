@@ -13,6 +13,7 @@
     WIDTH: 1000,
     HEIGHT: 700,
     PPM: 30,
+    BG_TILE_SIZE: 256,
     STAR_COUNT: 50,
     STAR_MIN_DEPTH: 1,
     STAR_MAX_DEPTH: 0,
@@ -1356,7 +1357,13 @@
 
     Planet.prototype.update = function() {};
 
-    Planet.prototype.draw = function() {};
+    Planet.prototype.draw = function() {
+      var bg_pos;
+
+      bg_pos = this.universe.camera.worldToScreen(new b2Vec2(0, 0));
+      this._background.position.x = bg_pos.x;
+      return this._background.position.y = bg_pos.y;
+    };
 
     Planet.prototype.getBounds = function() {
       return {
@@ -1372,7 +1379,8 @@
     };
 
     Planet.prototype.unload = function() {
-      return this._unloadTerrain();
+      this._unloadTerrain();
+      return this.universe.game.bg_stage.removeChild(this._background);
     };
 
     Planet.prototype._initTerrain = function() {
@@ -1448,7 +1456,51 @@
     };
 
     Planet.prototype._initBackground = function() {
-      return this._background = new PIXI.RenderTexture();
+      var container, edge_w, h, left_edge, main_w, right_edge, row, tex, tile, tile_map, top_row, total_w, type, w, x, y, _i, _j, _k, _l, _m, _n;
+
+      tile_map = [];
+      main_w = (this.size * settings.PPM) / settings.BG_TILE_SIZE;
+      edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE);
+      if (edge_w % 2 !== 0) {
+        edge_w += 1;
+      }
+      total_w = main_w + edge_w;
+      left_edge = edge_w / 2;
+      right_edge = left_edge + main_w;
+      top_row = [];
+      for (x = _i = 0; 0 <= total_w ? _i < total_w : _i > total_w; x = 0 <= total_w ? ++_i : --_i) {
+        top_row.push(1);
+      }
+      tile_map.push(top_row);
+      row = [];
+      for (x = _j = left_edge; left_edge <= right_edge ? _j < right_edge : _j > right_edge; x = left_edge <= right_edge ? ++_j : --_j) {
+        row[x] = [0, 2][Math.round(Math.random() * 1)];
+      }
+      for (x = _k = 0; 0 <= left_edge ? _k < left_edge : _k > left_edge; x = 0 <= left_edge ? ++_k : --_k) {
+        row[x] = row[x + main_w];
+      }
+      for (x = _l = right_edge; right_edge <= total_w ? _l < total_w : _l > total_w; x = right_edge <= total_w ? ++_l : --_l) {
+        row[x] = row[(x - right_edge) + left_edge];
+      }
+      tile_map.push(row);
+      w = (this.size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE);
+      h = settings.BG_TILE_SIZE * 2;
+      tex = new PIXI.RenderTexture(w, h);
+      container = new PIXI.DisplayObjectContainer();
+      for (y = _m = 0; _m < 2; y = ++_m) {
+        for (x = _n = 0; 0 <= total_w ? _n < total_w : _n > total_w; x = 0 <= total_w ? ++_n : --_n) {
+          type = tile_map[y][x];
+          tile = PIXI.Sprite.fromFrame("bg_type1_" + type);
+          tile.position.x = x * settings.BG_TILE_SIZE;
+          tile.position.y = y * settings.BG_TILE_SIZE;
+          container.addChild(tile);
+        }
+      }
+      tex.render(container);
+      this._background = new PIXI.Sprite(tex);
+      this._background.anchor.x = 0.5;
+      this._background.anchor.y = 1;
+      return this.universe.game.bg_stage.addChild(this._background);
     };
 
     Planet.prototype._getGravity = function(size) {
@@ -1456,7 +1508,11 @@
     };
 
     Planet.prototype._getRoundedSize = function(size) {
-      return size;
+      var new_w, w;
+
+      w = size * settings.PPM;
+      new_w = Math.ceil(w / settings.BG_TILE_SIZE) * settings.BG_TILE_SIZE;
+      return new_w / settings.PPM;
     };
 
     return Planet;
@@ -1484,7 +1540,7 @@
     };
 
     function Universe(game, graphics, camera) {
-      var atm_tex, atm_w, bodyDef, doSleep, fixDef, gravity, w;
+      var bodyDef, doSleep, fixDef, gravity;
 
       this.game = game;
       this.graphics = graphics;
@@ -1493,24 +1549,6 @@
       this.world = new b2Dynamics.b2World(gravity, doSleep = true);
       this.current_planet = new Planet(this, 100);
       this.current_planet.load();
-      atm_tex = PIXI.Texture.fromImage("assets/img/atmosphere.png");
-      w = {
-        x: this.current_planet.size,
-        y: 0
-      };
-      atm_w = this.camera.worldToScreenUnits(w).x + settings.WIDTH + 20;
-      this._atm = new PIXI.TilingSprite(atm_tex, atm_w, atm_tex.height);
-      this._atm.tilePosition.y = -1;
-      this._atm_pos = {
-        x: -atm_w / 2,
-        y: 0
-      };
-      this._atm_pos = this.camera.screenToWorldUnits(this._atm_pos);
-      this._atm.position.x = this._atm_pos.x;
-      this._atm.position.y = this._atm_pos.y;
-      this._atm.anchor.x = 0;
-      this._atm.anchor.y = 1;
-      this.game.bg_stage.addChild(this._atm);
       this._debug_drawer = new DebugDraw(this.camera);
       this._debug_drawer.SetSprite(this.graphics);
       this._debug_drawer.SetDrawScale(1);
@@ -1542,6 +1580,7 @@
     Universe.prototype.update = function() {
       var c, _i, _len, _ref;
 
+      this.current_planet.update();
       _ref = this.characters;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         c = _ref[_i];
@@ -1567,11 +1606,9 @@
     };
 
     Universe.prototype.draw = function() {
-      var atm_screen, c, _i, _len, _ref;
+      var c, _i, _len, _ref;
 
-      atm_screen = this.camera.worldToScreen(this._atm_pos);
-      this._atm.position.x = atm_screen.x;
-      this._atm.position.y = atm_screen.y;
+      this.current_planet.draw();
       _ref = this.characters;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         c = _ref[_i];
@@ -1926,7 +1963,7 @@
     var DOM_LOADED, assets, loader;
 
     DOM_LOADED = true;
-    assets = ["assets/img/jackie_chun.json", "assets/img/goku.json", "assets/img/atmosphere.png"];
+    assets = ["assets/img/jackie_chun.json", "assets/img/goku.json", "assets/img/bg_type1.json"];
     loader = new PIXI.AssetLoader(assets);
     loader.onComplete = main;
     return loader.load();

@@ -6,6 +6,7 @@ settings = {
   WIDTH: 1000
   HEIGHT: 700
   PPM: 30  # pixels per meter
+  BG_TILE_SIZE: 256
 
   STAR_COUNT: 50
   STAR_MIN_DEPTH: 1

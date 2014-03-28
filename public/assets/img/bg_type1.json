@@ -1,0 +1,27 @@
+{"frames": {
+
+"bg_type1_0" :
+{
+	"frame": {"x":0,"y":0,"w":256,"h":256},
+	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":256},
+	"sourceSize": {"w":256,"h":256}
+},
+"bg_type1_1" :
+{
+	"frame": {"x":256,"y":0,"w":256,"h":256},
+	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":256},
+	"sourceSize": {"w":256,"h":256}
+},
+"bg_type1_2" :
+{
+	"frame": {"x":0,"y":256,"w":256,"h":256},
+	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":256},
+	"sourceSize": {"w":256,"h":256}
+}
+
+},
+"meta": {
+  "image": "bg_type1.png",
+	"size": {"w":512,"h":512}
+}
+}
