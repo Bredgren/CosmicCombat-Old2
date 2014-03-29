@@ -131,27 +131,27 @@ class BaseCharacter
 
   startUp: () ->
     @_jumping = true
+    @_directions.up = true
     if @_flying
-      @_directions.up = true
       @_move_direction.y = -1
 
   endUp: () ->
     @_jumping = false
+    @_directions.up = false
     if @_flying
-      @_directions.up = false
       if @_directions.down
         @_move_direction.y = 1
       else
         @_move_direction.y = 0
 
   startDown: () ->
+    @_directions.down = true
     if @_flying
-      @_directions.down = true
       @_move_direction.y = 1
 
   endDown: () ->
+    @_directions.down = false
     if @_flying
-      @_directions.down = false
       if @_directions.up
         @_move_direction.y = -1
       else
@@ -162,6 +162,8 @@ class BaseCharacter
       if @_blocking
         @_stopMoveX()
         @_stopMoveY()
+      if @_directions.up
+        @_move_direction.y = -1
       @_flying = true
 
   endFly: () ->
@@ -179,7 +181,6 @@ class BaseCharacter
       @_move_direction.x = -1
     else
       @_move_direction.x = 0
-      # @_stopMoveX()
 
   startLeft: () ->
     @_directions.left = true
@@ -192,7 +193,6 @@ class BaseCharacter
       @_move_direction.x = 1
     else
       @_move_direction.x = 0
-      # @_stopMoveX()
 
   startPowerUp: () ->
     @_power_up = @power_up_rate

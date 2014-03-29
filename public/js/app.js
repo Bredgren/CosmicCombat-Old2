@@ -401,16 +401,16 @@
 
     BaseCharacter.prototype.startUp = function() {
       this._jumping = true;
+      this._directions.up = true;
       if (this._flying) {
-        this._directions.up = true;
         return this._move_direction.y = -1;
       }
     };
 
     BaseCharacter.prototype.endUp = function() {
       this._jumping = false;
+      this._directions.up = false;
       if (this._flying) {
-        this._directions.up = false;
         if (this._directions.down) {
           return this._move_direction.y = 1;
         } else {
@@ -420,15 +420,15 @@
     };
 
     BaseCharacter.prototype.startDown = function() {
+      this._directions.down = true;
       if (this._flying) {
-        this._directions.down = true;
         return this._move_direction.y = 1;
       }
     };
 
     BaseCharacter.prototype.endDown = function() {
+      this._directions.down = false;
       if (this._flying) {
-        this._directions.down = false;
         if (this._directions.up) {
           return this._move_direction.y = -1;
         } else {
@@ -442,6 +442,9 @@
         if (this._blocking) {
           this._stopMoveX();
           this._stopMoveY();
+        }
+        if (this._directions.up) {
+          this._move_direction.y = -1;
         }
         return this._flying = true;
       }
