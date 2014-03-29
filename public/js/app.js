@@ -1375,7 +1375,8 @@
     };
 
     Planet.prototype.load = function() {
-      return this._loadTerrain();
+      this._loadTerrain();
+      return this.universe.game.bg_stage.addChild(this._background);
     };
 
     Planet.prototype.unload = function() {
@@ -1499,8 +1500,7 @@
       tex.render(container);
       this._background = new PIXI.Sprite(tex);
       this._background.anchor.x = 0.5;
-      this._background.anchor.y = 1;
-      return this.universe.game.bg_stage.addChild(this._background);
+      return this._background.anchor.y = 1;
     };
 
     Planet.prototype._getGravity = function(size) {

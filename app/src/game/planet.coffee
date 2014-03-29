@@ -38,8 +38,9 @@ class Planet
   # Adds physics items to the world, ...
   load: () ->
     @_loadTerrain()
+    @universe.game.bg_stage.addChild(@_background)
 
-  # Removes  physics items from the world, ...
+  # Removes  physics items from the world and sprites from the stage
   unload: () ->
     @_unloadTerrain()
     @universe.game.bg_stage.removeChild(@_background)
@@ -121,39 +122,12 @@ class Planet
         tile.position.y = y * settings.BG_TILE_SIZE
         container.addChild(tile)
 
-    # Room for adding half a screen on both sides
-    # edge_width =
-    #   Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE) * settings.BG_TILE_SIZE
-    # w = (@size * settings.PPM) + edge_width
-    # h = settings.BG_TILE_SIZE * 2
-    # tex = new PIXI.RenderTexture(w, h)
-    # container = new PIXI.DisplayObjectContainer()
-
-    # for x in [0...w/2] by settings.BG_TILE_SIZE
-    #   for y in [0...h] by settings.BG_TILE_SIZE
-    #     if y is 0
-    #       type = 1
-    #     else
-    #       type = [0, 2][Math.round(Math.random() * 1)]
-    #     tile1 = PIXI.Sprite.fromFrame("bg_type1_#{type}")
-    #     tile1.position.x = x
-    #     tile1.position.y = y
-
-    #     tile2 = PIXI.Sprite.fromFrame("bg_type1_#{type}")
-    #     tile2.position.x = x + w / 2
-    #     tile2.position.y = y
-
-    #     container.addChild(tile1)
-    #     container.addChild(tile2)
-
     tex.render(container)
 
     @_background = new PIXI.Sprite(tex)
     @_background.anchor.x = 0.5
     @_background.anchor.y = 1
     # Background is always assumed to be at position (0, 0) in the world
-
-    @universe.game.bg_stage.addChild(@_background)
 
   # Determines the strength of gravity from the size
   _getGravity: (size) ->

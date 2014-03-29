@@ -27,22 +27,6 @@ class Universe
     @current_planet = new Planet(@, 100)
     @current_planet.load()
 
-    # atm_tex = PIXI.Texture.fromImage("assets/img/atmosphere.png")
-    # w = {x: @current_planet.size, y: 0}
-    # # 20px buffer to prevent edge flicker when crossing to other side
-    # atm_w = @camera.worldToScreenUnits(w).x + settings.WIDTH + 20
-    # @_atm = new PIXI.TilingSprite(atm_tex, atm_w, atm_tex.height)
-    # @_atm.tilePosition.y = -1  # Fixes out of place pixel row on top
-    # @_atm_pos =
-    #   x: -atm_w / 2
-    #   y: 0
-    # @_atm_pos = @camera.screenToWorldUnits(@_atm_pos)
-    # @_atm.position.x = @_atm_pos.x
-    # @_atm.position.y = @_atm_pos.y
-    # @_atm.anchor.x = 0
-    # @_atm.anchor.y = 1
-    # @game.bg_stage.addChild(@_atm)
-
     @_debug_drawer = new DebugDraw(@camera)
     @_debug_drawer.SetSprite(@graphics)
     # @_debug_drawer.SetDrawScale(settings.PPM)
@@ -97,10 +81,6 @@ class Universe
     @camera.y = new_camera_pos.y
 
   draw: () ->
-    # @_atm.position.y = -@camera.worldToScreenUnits(@camera).y - 2500
-    # atm_screen = @camera.worldToScreen(@_atm_pos)
-    # @_atm.position.x = atm_screen.x
-    # @_atm.position.y = atm_screen.y
     @current_planet.draw()
     c.draw() for c in @characters
     if @debug_draw_enabled
