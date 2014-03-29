@@ -7,6 +7,7 @@ class Planet
   characters: []
   # neighbors: []
   _background: null
+  _terrain_mask: null
 
   # size [Number] the circumference in meters. This size will be rounded down to
   #               be a multiple of the background tile size so that the
@@ -17,13 +18,28 @@ class Planet
     @depth = @size / (2 * Math.PI)
     @world = @universe.world
 
+    @_terrain_mask = new PIXI.Graphics()
+    @universe.game.bg_stage.addChild(@_terrain_mask)
+
     @_initTerrain()
     @_initBackground()
 
   update: () ->
 
   draw: () ->
-    bg_pos = @universe.camera.worldToScreen(new b2Vec2(0, 0))
+    @_terrain_mask.clear()
+    for poly in @terrain
+      @_terrain_mask.beginFill()
+      v0 = poly[0]
+      v0 = @universe.camera.worldToScreen(v0)
+      @_terrain_mask.moveTo(v0.x, v0.y)
+      for v in poly[1..]
+        v = @universe.camera.worldToScreen(v)
+        @_terrain_mask.lineTo(v.x, v.y)
+      @_terrain_mask.lineTo(v0.x, v0.y)
+      @_terrain_mask.endFill()
+
+    bg_pos = @universe.camera.worldToScreen(new b2Vec2(0, 5))
     @_background.position.x = bg_pos.x
     @_background.position.y = bg_pos.y
 
@@ -51,7 +67,9 @@ class Planet
     cx = 0
     cy = h
     @terrain = [[{x: cx - w, y: cy - h}, {x: cx + w, y: cy - h},
-                 {x: cx + w, y: cy + h}, {x: cx - w, y: cy + h}]]
+                 {x: cx + w, y: cy + h}, {x: cx - w, y: cy + h}],
+                [{x: cx, y: cy - h}, {x: cx + 4, y: cy - 2 - h},
+                 {x: cx + 4, y: cy - h}]]
 
   _updateTerrainBody: () ->
     @_unloadTerrain()
@@ -128,6 +146,7 @@ class Planet
     @_background.anchor.x = 0.5
     @_background.anchor.y = 1
     # Background is always assumed to be at position (0, 0) in the world
+    @_background.mask = @_terrain_mask
 
   # Determines the strength of gravity from the size
   _getGravity: (size) ->

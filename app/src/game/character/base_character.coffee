@@ -162,6 +162,7 @@ class BaseCharacter
       if @_blocking
         @_stopMoveX()
         @_stopMoveY()
+      # Fly upward if up is being held
       if @_directions.up
         @_move_direction.y = -1
       @_flying = true

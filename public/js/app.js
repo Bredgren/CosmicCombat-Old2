@@ -1347,6 +1347,8 @@
 
     Planet.prototype._background = null;
 
+    Planet.prototype._terrain_mask = null;
+
     function Planet(universe, size) {
       this.universe = universe;
       this.size = size;
@@ -1354,6 +1356,8 @@
       this.gravity = new b2Vec2(0, this._getGravity(this.size));
       this.depth = this.size / (2 * Math.PI);
       this.world = this.universe.world;
+      this._terrain_mask = new PIXI.Graphics();
+      this.universe.game.bg_stage.addChild(this._terrain_mask);
       this._initTerrain();
       this._initBackground();
     }
@@ -1361,9 +1365,26 @@
     Planet.prototype.update = function() {};
 
     Planet.prototype.draw = function() {
-      var bg_pos;
+      var bg_pos, poly, v, v0, _i, _j, _len, _len1, _ref, _ref1;
 
-      bg_pos = this.universe.camera.worldToScreen(new b2Vec2(0, 0));
+      this._terrain_mask.clear();
+      _ref = this.terrain;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        poly = _ref[_i];
+        this._terrain_mask.beginFill();
+        v0 = poly[0];
+        v0 = this.universe.camera.worldToScreen(v0);
+        this._terrain_mask.moveTo(v0.x, v0.y);
+        _ref1 = poly.slice(1);
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          v = _ref1[_j];
+          v = this.universe.camera.worldToScreen(v);
+          this._terrain_mask.lineTo(v.x, v.y);
+        }
+        this._terrain_mask.lineTo(v0.x, v0.y);
+        this._terrain_mask.endFill();
+      }
+      bg_pos = this.universe.camera.worldToScreen(new b2Vec2(0, 5));
       this._background.position.x = bg_pos.x;
       return this._background.position.y = bg_pos.y;
     };
@@ -1408,6 +1429,17 @@
           }, {
             x: cx - w,
             y: cy + h
+          }
+        ], [
+          {
+            x: cx,
+            y: cy - h
+          }, {
+            x: cx + 4,
+            y: cy - 2 - h
+          }, {
+            x: cx + 4,
+            y: cy - h
           }
         ]
       ];
@@ -1503,7 +1535,8 @@
       tex.render(container);
       this._background = new PIXI.Sprite(tex);
       this._background.anchor.x = 0.5;
-      return this._background.anchor.y = 1;
+      this._background.anchor.y = 1;
+      return this._background.mask = this._terrain_mask;
     };
 
     Planet.prototype._getGravity = function(size) {
