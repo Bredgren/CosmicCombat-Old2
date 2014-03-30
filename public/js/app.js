@@ -1357,7 +1357,6 @@
       this.depth = this.size / (2 * Math.PI);
       this.world = this.universe.world;
       this._terrain_mask = new PIXI.Graphics();
-      this.universe.game.bg_stage.addChild(this._terrain_mask);
       this._initTerrain();
       this._initBackground();
     }
@@ -1365,26 +1364,59 @@
     Planet.prototype.update = function() {};
 
     Planet.prototype.draw = function() {
-      var bg_pos, poly, v, v0, _i, _j, _len, _len1, _ref, _ref1;
+      var alt_x, bg_pos, bounds, dif, drawPoly, max_x, max_y, min_x, min_y, poly, v, wrapped_poly1, wrapped_poly2, _i, _j, _k, _len, _len1, _len2, _ref,
+        _this = this;
 
+      drawPoly = function(vertices) {
+        var v, v0, _i, _len, _ref;
+
+        _this._terrain_mask.beginFill();
+        v0 = vertices[0];
+        v0 = _this.universe.camera.worldToScreen(v0);
+        _this._terrain_mask.moveTo(v0.x, v0.y);
+        _ref = vertices.slice(1);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          v = _ref[_i];
+          v = _this.universe.camera.worldToScreen(v);
+          _this._terrain_mask.lineTo(v.x, v.y);
+        }
+        _this._terrain_mask.lineTo(v0.x, v0.y);
+        return _this._terrain_mask.endFill();
+      };
       this._terrain_mask.clear();
       _ref = this.terrain;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         poly = _ref[_i];
-        this._terrain_mask.beginFill();
-        v0 = poly[0];
-        v0 = this.universe.camera.worldToScreen(v0);
-        this._terrain_mask.moveTo(v0.x, v0.y);
-        _ref1 = poly.slice(1);
-        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          v = _ref1[_j];
-          v = this.universe.camera.worldToScreen(v);
-          this._terrain_mask.lineTo(v.x, v.y);
+        bounds = this.getBounds();
+        min_x = bounds.x - bounds.w / 2;
+        max_x = min_x + bounds.w * 2;
+        min_y = bounds.y - bounds.h / 2;
+        max_y = min_y + bounds.h * 2;
+        alt_x = poly[0].x + bounds.w;
+        dif = alt_x - poly[0].x;
+        wrapped_poly1 = [];
+        for (_j = 0, _len1 = poly.length; _j < _len1; _j++) {
+          v = poly[_j];
+          wrapped_poly1.push({
+            x: v.x + dif,
+            y: v.y
+          });
         }
-        this._terrain_mask.lineTo(v0.x, v0.y);
-        this._terrain_mask.endFill();
+        alt_x = poly[0].x - bounds.w;
+        dif = poly[0].x - alt_x;
+        wrapped_poly2 = [];
+        for (_k = 0, _len2 = poly.length; _k < _len2; _k++) {
+          v = poly[_k];
+          wrapped_poly2.push({
+            x: v.x - dif,
+            y: v.y
+          });
+        }
+        drawPoly(poly);
+        drawPoly(wrapped_poly1);
+        drawPoly(wrapped_poly2);
       }
-      bg_pos = this.universe.camera.worldToScreen(new b2Vec2(0, 5));
+      bg_pos = this.universe.camera.worldToScreen(new b2Vec2(0, 0));
       this._background.position.x = bg_pos.x;
       return this._background.position.y = bg_pos.y;
     };
@@ -1400,12 +1432,14 @@
 
     Planet.prototype.load = function() {
       this._loadTerrain();
-      return this.universe.game.bg_stage.addChild(this._background);
+      this.universe.game.bg_stage.addChild(this._background);
+      return this.universe.game.bg_stage.addChild(this._terrain_mask);
     };
 
     Planet.prototype.unload = function() {
       this._unloadTerrain();
-      return this.universe.game.bg_stage.removeChild(this._background);
+      this.universe.game.bg_stage.removeChild(this._background);
+      return this.universe.game.bg_stage.removeChild(this._terrain_mask);
     };
 
     Planet.prototype._initTerrain = function() {
@@ -1535,8 +1569,7 @@
       tex.render(container);
       this._background = new PIXI.Sprite(tex);
       this._background.anchor.x = 0.5;
-      this._background.anchor.y = 1;
-      return this._background.mask = this._terrain_mask;
+      return this._background.anchor.y = 1;
     };
 
     Planet.prototype._getGravity = function(size) {

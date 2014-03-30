@@ -1,3 +1,4 @@
+#_require ../util
 
 class Planet
   gravity: null
@@ -19,7 +20,6 @@ class Planet
     @world = @universe.world
 
     @_terrain_mask = new PIXI.Graphics()
-    @universe.game.bg_stage.addChild(@_terrain_mask)
 
     @_initTerrain()
     @_initBackground()
@@ -27,19 +27,43 @@ class Planet
   update: () ->
 
   draw: () ->
-    @_terrain_mask.clear()
-    for poly in @terrain
+    drawPoly = (vertices) =>
       @_terrain_mask.beginFill()
-      v0 = poly[0]
+      v0 = vertices[0]
       v0 = @universe.camera.worldToScreen(v0)
       @_terrain_mask.moveTo(v0.x, v0.y)
-      for v in poly[1..]
+      for v in vertices[1..]
         v = @universe.camera.worldToScreen(v)
         @_terrain_mask.lineTo(v.x, v.y)
       @_terrain_mask.lineTo(v0.x, v0.y)
       @_terrain_mask.endFill()
 
-    bg_pos = @universe.camera.worldToScreen(new b2Vec2(0, 5))
+    # TODO: only draw visible wrapped ones if necessary
+    @_terrain_mask.clear()
+    for poly in @terrain
+      bounds = @getBounds()
+      min_x = bounds.x - bounds.w / 2
+      max_x = min_x + bounds.w * 2
+      min_y = bounds.y - bounds.h / 2
+      max_y = min_y + bounds.h * 2
+
+      alt_x = poly[0].x + bounds.w
+      dif = alt_x - poly[0].x
+      wrapped_poly1 = []
+      for v in poly
+        wrapped_poly1.push({x: v.x + dif, y: v.y})
+
+      alt_x = poly[0].x - bounds.w
+      dif = poly[0].x - alt_x
+      wrapped_poly2 = []
+      for v in poly
+        wrapped_poly2.push({x: v.x - dif, y: v.y})
+
+      drawPoly(poly)
+      drawPoly(wrapped_poly1)
+      drawPoly(wrapped_poly2)
+
+    bg_pos = @universe.camera.worldToScreen(new b2Vec2(0, 0))
     @_background.position.x = bg_pos.x
     @_background.position.y = bg_pos.y
 
@@ -55,11 +79,13 @@ class Planet
   load: () ->
     @_loadTerrain()
     @universe.game.bg_stage.addChild(@_background)
+    @universe.game.bg_stage.addChild(@_terrain_mask)
 
   # Removes  physics items from the world and sprites from the stage
   unload: () ->
     @_unloadTerrain()
     @universe.game.bg_stage.removeChild(@_background)
+    @universe.game.bg_stage.removeChild(@_terrain_mask)
 
   _initTerrain: () ->
     w = @size / 2
@@ -146,7 +172,7 @@ class Planet
     @_background.anchor.x = 0.5
     @_background.anchor.y = 1
     # Background is always assumed to be at position (0, 0) in the world
-    @_background.mask = @_terrain_mask
+    # @_background.mask = @_terrain_mask
 
   # Determines the strength of gravity from the size
   _getGravity: (size) ->
