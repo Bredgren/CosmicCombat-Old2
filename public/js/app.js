@@ -1335,6 +1335,8 @@
   })(b2Dynamics.b2DebugDraw);
 
   Planet = (function() {
+    Planet.prototype.MAX_TERRAIN_HEIGHT = 20;
+
     Planet.prototype.gravity = null;
 
     Planet.prototype.size = 100;
@@ -1345,7 +1347,9 @@
 
     Planet.prototype.characters = [];
 
-    Planet.prototype._background = null;
+    Planet.prototype._background_sprite = null;
+
+    Planet.prototype._terrain_sprite = null;
 
     Planet.prototype._terrain_mask = null;
 
@@ -1364,7 +1368,7 @@
     Planet.prototype.update = function() {};
 
     Planet.prototype.draw = function() {
-      var alt_x, bg_pos, bounds, dif, drawPoly, max_x, max_y, min_x, min_y, poly, v, wrapped_poly1, wrapped_poly2, _i, _j, _k, _len, _len1, _len2, _ref,
+      var alt_x, bg_pos, bounds, dif, drawPoly, max_x, max_y, min_x, min_y, poly, trn_pos, v, wrapped_poly1, wrapped_poly2, _i, _j, _k, _len, _len1, _len2, _ref,
         _this = this;
 
       drawPoly = function(vertices) {
@@ -1417,8 +1421,11 @@
         drawPoly(wrapped_poly2);
       }
       bg_pos = this.universe.camera.worldToScreen(new b2Vec2(0, 0));
-      this._background.position.x = bg_pos.x;
-      return this._background.position.y = bg_pos.y;
+      this._background_sprite.position.x = bg_pos.x;
+      this._background_sprite.position.y = bg_pos.y;
+      trn_pos = this.universe.camera.worldToScreen(new b2Vec2(0, this.depth));
+      this._terrain_sprite.position.x = trn_pos.x;
+      return this._terrain_sprite.position.y = trn_pos.y;
     };
 
     Planet.prototype.getBounds = function() {
@@ -1432,24 +1439,26 @@
 
     Planet.prototype.load = function() {
       this._loadTerrain();
-      this.universe.game.bg_stage.addChild(this._background);
+      this.universe.game.bg_stage.addChild(this._background_sprite);
+      this.universe.game.bg_stage.addChild(this._terrain_sprite);
       return this.universe.game.bg_stage.addChild(this._terrain_mask);
     };
 
     Planet.prototype.unload = function() {
       this._unloadTerrain();
-      this.universe.game.bg_stage.removeChild(this._background);
+      this.universe.game.bg_stage.removeChild(this._background_sprite);
+      this.universe.game.bg_stage.removeChild(this._terrain_sprite);
       return this.universe.game.bg_stage.removeChild(this._terrain_mask);
     };
 
     Planet.prototype._initTerrain = function() {
-      var cx, cy, h, w;
+      var colors, container, cx, cy, edge_w, g, h, height, tex, w, width, x, y, _, _i;
 
       w = this.size / 2;
       h = this.depth / 2;
       cx = 0;
       cy = h;
-      return this.terrain = [
+      this.terrain = [
         [
           {
             x: cx - w,
@@ -1477,6 +1486,31 @@
           }
         ]
       ];
+      edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE);
+      w = (this.size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE);
+      h = (this.depth + this.MAX_TERRAIN_HEIGHT) * settings.PPM;
+      tex = new PIXI.RenderTexture(w, h);
+      container = new PIXI.DisplayObjectContainer();
+      g = new PIXI.Graphics();
+      container.addChild(g);
+      g.beginFill(0x682900);
+      g.drawRect(0, 0, w, h);
+      g.endFill();
+      colors = [0xAF4600, 0xAAAAAA, 0x404040, 0x3F0000];
+      for (_ = _i = 0; _i < 10000; _ = ++_i) {
+        g.beginFill(colors[Math.floor(Math.random() * colors.length)]);
+        x = Math.random() * w;
+        y = Math.random() * h;
+        width = (Math.random() * 20) + 1;
+        height = (Math.random() * 20) + 1;
+        g.drawRect(x, y, width, height);
+        g.endFill();
+      }
+      tex.render(container);
+      this._terrain_sprite = new PIXI.Sprite(tex);
+      this._terrain_sprite.anchor.x = 0.5;
+      this._terrain_sprite.anchor.y = 1;
+      return this._terrain_sprite.mask = this._terrain_mask;
     };
 
     Planet.prototype._updateTerrainBody = function() {
@@ -1526,50 +1560,47 @@
     };
 
     Planet.prototype._initBackground = function() {
-      var container, edge_w, h, left_edge, main_w, right_edge, row, tex, tile, tile_map, top_row, total_w, type, w, x, y, _i, _j, _k, _l, _m, _n;
+      var area_size, c, container, edge_w, g, h, height, s, s2, tex, w, width, x, x2, y, y2, _, _i, _j, _ref;
 
-      tile_map = [];
-      main_w = (this.size * settings.PPM) / settings.BG_TILE_SIZE;
       edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE);
-      if (edge_w % 2 !== 0) {
-        edge_w += 1;
-      }
-      total_w = main_w + edge_w;
-      left_edge = edge_w / 2;
-      right_edge = left_edge + main_w;
-      top_row = [];
-      for (x = _i = 0; 0 <= total_w ? _i < total_w : _i > total_w; x = 0 <= total_w ? ++_i : --_i) {
-        top_row.push(1);
-      }
-      tile_map.push(top_row);
-      row = [];
-      for (x = _j = left_edge; left_edge <= right_edge ? _j < right_edge : _j > right_edge; x = left_edge <= right_edge ? ++_j : --_j) {
-        row[x] = [0, 2][Math.round(Math.random() * 1)];
-      }
-      for (x = _k = 0; 0 <= left_edge ? _k < left_edge : _k > left_edge; x = 0 <= left_edge ? ++_k : --_k) {
-        row[x] = row[x + main_w];
-      }
-      for (x = _l = right_edge; right_edge <= total_w ? _l < total_w : _l > total_w; x = right_edge <= total_w ? ++_l : --_l) {
-        row[x] = row[(x - right_edge) + left_edge];
-      }
-      tile_map.push(row);
       w = (this.size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE);
       h = settings.BG_TILE_SIZE * 2;
       tex = new PIXI.RenderTexture(w, h);
       container = new PIXI.DisplayObjectContainer();
-      for (y = _m = 0; _m < 2; y = ++_m) {
-        for (x = _n = 0; 0 <= total_w ? _n < total_w : _n > total_w; x = 0 <= total_w ? ++_n : --_n) {
-          type = tile_map[y][x];
-          tile = PIXI.Sprite.fromFrame("bg_type1_" + type);
-          tile.position.x = x * settings.BG_TILE_SIZE;
-          tile.position.y = y * settings.BG_TILE_SIZE;
-          container.addChild(tile);
+      g = new PIXI.Graphics();
+      container.addChild(g);
+      g.beginFill(0x0094FF);
+      g.drawRect(0, 0, w, h);
+      g.endFill();
+      for (_ = _i = 0; _i < 20; _ = ++_i) {
+        x = Math.random() * w;
+        y = h;
+        width = (Math.random() * 20) + 10;
+        height = width * (10 + (Math.random() * 10) - 5);
+        g.beginFill(0x7F3300);
+        g.drawRect(x - (width / 2), y - height, width, height);
+        g.endFill();
+        s = (height / 2) + ((Math.random() * 10) - 5);
+        x -= s / 2;
+        y -= height;
+        g.beginFill(0x007F0E);
+        g.drawRect(x, y, s, s);
+        g.endFill();
+        c = [0x005408, 0x00BC0F];
+        for (_ = _j = 0, _ref = Math.floor(Math.random() * 8) + 2; 0 <= _ref ? _j < _ref : _j > _ref; _ = 0 <= _ref ? ++_j : --_j) {
+          s2 = (s / 5) + ((Math.random() * 4) - 2);
+          area_size = s * 1.1;
+          x2 = (Math.random() * area_size) - (s * .1);
+          y2 = (Math.random() * area_size) - (s * .1);
+          g.beginFill(c[Math.floor(Math.random() * 2)]);
+          g.drawRect(x + x2, y + y2, s2, s2);
+          g.endFill();
         }
       }
       tex.render(container);
-      this._background = new PIXI.Sprite(tex);
-      this._background.anchor.x = 0.5;
-      return this._background.anchor.y = 1;
+      this._background_sprite = new PIXI.Sprite(tex);
+      this._background_sprite.anchor.x = 0.5;
+      return this._background_sprite.anchor.y = 1;
     };
 
     Planet.prototype._getGravity = function(size) {

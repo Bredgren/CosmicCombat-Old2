@@ -1,13 +1,16 @@
 #_require ../util
 
 class Planet
+  MAX_TERRAIN_HEIGHT: 20
+
   gravity: null
   size: 100
   depth: 10
   terrain: []
   characters: []
   # neighbors: []
-  _background: null
+  _background_sprite: null
+  _terrain_sprite: null
   _terrain_mask: null
 
   # size [Number] the circumference in meters. This size will be rounded down to
@@ -64,8 +67,12 @@ class Planet
       drawPoly(wrapped_poly2)
 
     bg_pos = @universe.camera.worldToScreen(new b2Vec2(0, 0))
-    @_background.position.x = bg_pos.x
-    @_background.position.y = bg_pos.y
+    @_background_sprite.position.x = bg_pos.x
+    @_background_sprite.position.y = bg_pos.y
+
+    trn_pos = @universe.camera.worldToScreen(new b2Vec2(0, @depth))
+    @_terrain_sprite.position.x = trn_pos.x
+    @_terrain_sprite.position.y = trn_pos.y
 
   getBounds: () ->
     return {
@@ -78,13 +85,15 @@ class Planet
   # Adds physics items to the world, ...
   load: () ->
     @_loadTerrain()
-    @universe.game.bg_stage.addChild(@_background)
+    @universe.game.bg_stage.addChild(@_background_sprite)
+    @universe.game.bg_stage.addChild(@_terrain_sprite)
     @universe.game.bg_stage.addChild(@_terrain_mask)
 
   # Removes  physics items from the world and sprites from the stage
   unload: () ->
     @_unloadTerrain()
-    @universe.game.bg_stage.removeChild(@_background)
+    @universe.game.bg_stage.removeChild(@_background_sprite)
+    @universe.game.bg_stage.removeChild(@_terrain_sprite)
     @universe.game.bg_stage.removeChild(@_terrain_mask)
 
   _initTerrain: () ->
@@ -96,6 +105,36 @@ class Planet
                  {x: cx + w, y: cy + h}, {x: cx - w, y: cy + h}],
                 [{x: cx, y: cy - h}, {x: cx + 4, y: cy - 2 - h},
                  {x: cx + 4, y: cy - h}]]
+
+    edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE)
+    w = (@size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE)
+    h = (@depth + @MAX_TERRAIN_HEIGHT) * settings.PPM
+    tex = new PIXI.RenderTexture(w, h)
+    container = new PIXI.DisplayObjectContainer()
+    g = new PIXI.Graphics()
+    container.addChild(g)
+    g.beginFill(0x682900)
+    g.drawRect(0, 0, w, h)
+    g.endFill()
+
+    # TODO: make better
+    # TODO: take wrapping into acount
+    colors = [0xAF4600, 0xAAAAAA, 0x404040, 0x3F0000]
+    for _ in [0...10000]
+      g.beginFill(colors[Math.floor(Math.random() * colors.length)])
+      x = Math.random() * w
+      y = Math.random() * h
+      width = (Math.random() * 20) + 1
+      height = (Math.random() * 20) + 1
+      g.drawRect(x, y, width, height)
+      g.endFill()
+
+    tex.render(container)
+
+    @_terrain_sprite = new PIXI.Sprite(tex)
+    @_terrain_sprite.anchor.x = 0.5
+    @_terrain_sprite.anchor.y = 1
+    @_terrain_sprite.mask = @_terrain_mask
 
   _updateTerrainBody: () ->
     @_unloadTerrain()
@@ -129,50 +168,94 @@ class Planet
       body = body.GetNext()
 
   _initBackground: () ->
-    tile_map = []
-    # Size in tiles
-    main_w = (@size * settings.PPM) / settings.BG_TILE_SIZE  #
+    # tile_map = []
+    # # Size in tiles
+    # main_w = (@size * settings.PPM) / settings.BG_TILE_SIZE  #
+    # edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE)
+    # if edge_w % 2 isnt 0
+    #   edge_w += 1
+    # total_w = main_w + edge_w
+    # left_edge = edge_w / 2
+    # right_edge = left_edge + main_w
+
+    # top_row = []
+    # for x in [0...total_w]
+    #   top_row.push(1)
+    # tile_map.push(top_row)
+
+    # row = []
+    # for x in [left_edge...right_edge]
+    #   row[x] = [0, 2][Math.round(Math.random() * 1)]
+    # for x in [0...left_edge]
+    #   row[x] = row[x + main_w]
+    # for x in [right_edge...total_w]
+    #   row[x] = row[(x - right_edge) + left_edge]
+    # tile_map.push(row)
+
+    # w = (@size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE)
+    # h = settings.BG_TILE_SIZE * 2
+    # tex = new PIXI.RenderTexture(w, h)
+    # container = new PIXI.DisplayObjectContainer()
+
+    # for y in [0...2]
+    #   for x in [0...total_w]
+    #     type = tile_map[y][x]
+    #     tile = PIXI.Sprite.fromFrame("bg_type1_#{type}")
+    #     tile.position.x = x * settings.BG_TILE_SIZE
+    #     tile.position.y = y * settings.BG_TILE_SIZE
+    #     container.addChild(tile)
+
+    # tex.render(container)
+
+    # @_background_sprite = new PIXI.Sprite(tex)
+    # @_background_sprite.anchor.x = 0.5
+    # @_background_sprite.anchor.y = 1
+    # # Background is always assumed to be at position (0, 0) in the world
+
+    # TODO: if random background generation works, remove tile size logic
     edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE)
-    if edge_w % 2 isnt 0
-      edge_w += 1
-    total_w = main_w + edge_w
-    left_edge = edge_w / 2
-    right_edge = left_edge + main_w
-
-    top_row = []
-    for x in [0...total_w]
-      top_row.push(1)
-    tile_map.push(top_row)
-
-    row = []
-    for x in [left_edge...right_edge]
-      row[x] = [0, 2][Math.round(Math.random() * 1)]
-    for x in [0...left_edge]
-      row[x] = row[x + main_w]
-    for x in [right_edge...total_w]
-      row[x] = row[(x - right_edge) + left_edge]
-    tile_map.push(row)
-
     w = (@size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE)
     h = settings.BG_TILE_SIZE * 2
     tex = new PIXI.RenderTexture(w, h)
     container = new PIXI.DisplayObjectContainer()
+    g = new PIXI.Graphics()
+    container.addChild(g)
+    g.beginFill(0x0094FF)
+    g.drawRect(0, 0, w, h)
+    g.endFill()
 
-    for y in [0...2]
-      for x in [0...total_w]
-        type = tile_map[y][x]
-        tile = PIXI.Sprite.fromFrame("bg_type1_#{type}")
-        tile.position.x = x * settings.BG_TILE_SIZE
-        tile.position.y = y * settings.BG_TILE_SIZE
-        container.addChild(tile)
+    # TODO: take wrapping into acount
+    for _ in [0...20]
+      x = Math.random() * w
+      y = h
+      width = (Math.random() * 20) + 10
+      height = width * (10 + (Math.random() * 10) - 5)
+      g.beginFill(0x7F3300)
+      g.drawRect(x - (width / 2), y - height, width, height) #
+      g.endFill()
+
+      s = (height / 2) + ((Math.random() * 10) - 5) #
+      x -= s / 2
+      y -= height
+      g.beginFill(0x007F0E)
+      g.drawRect(x, y, s, s)  #
+      g.endFill()
+
+      c = [0x005408, 0x00BC0F]
+      for _ in [0...(Math.floor(Math.random() * 8) + 2)]
+        s2 = (s / 5) + ((Math.random() * 4) - 2)  #
+        area_size = s * 1.1
+        x2 = (Math.random() * area_size) - (s * .1)
+        y2 = (Math.random() * area_size) - (s * .1)
+        g.beginFill(c[Math.floor(Math.random() * 2)])
+        g.drawRect(x + x2, y + y2, s2, s2)
+        g.endFill()
 
     tex.render(container)
 
-    @_background = new PIXI.Sprite(tex)
-    @_background.anchor.x = 0.5
-    @_background.anchor.y = 1
-    # Background is always assumed to be at position (0, 0) in the world
-    # @_background.mask = @_terrain_mask
+    @_background_sprite = new PIXI.Sprite(tex)
+    @_background_sprite.anchor.x = 0.5
+    @_background_sprite.anchor.y = 1
 
   # Determines the strength of gravity from the size
   _getGravity: (size) ->
