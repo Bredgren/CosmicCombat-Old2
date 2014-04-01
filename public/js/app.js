@@ -1452,7 +1452,7 @@
     };
 
     Planet.prototype._initTerrain = function() {
-      var colors, container, cx, cy, edge_w, g, h, height, tex, w, width, x, y, _, _i;
+      var cx, cy, edge_w, h, trn_tex, w;
 
       w = this.size / 2;
       h = this.depth / 2;
@@ -1486,28 +1486,11 @@
           }
         ]
       ];
+      trn_tex = PIXI.Texture.fromImage("assets/img/terrain_1.png");
       edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE);
       w = (this.size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE);
       h = (this.depth + this.MAX_TERRAIN_HEIGHT) * settings.PPM;
-      tex = new PIXI.RenderTexture(w, h);
-      container = new PIXI.DisplayObjectContainer();
-      g = new PIXI.Graphics();
-      container.addChild(g);
-      g.beginFill(0x682900);
-      g.drawRect(0, 0, w, h);
-      g.endFill();
-      colors = [0xAF4600, 0xAAAAAA, 0x404040, 0x3F0000];
-      for (_ = _i = 0; _i < 10000; _ = ++_i) {
-        g.beginFill(colors[Math.floor(Math.random() * colors.length)]);
-        x = Math.random() * w;
-        y = Math.random() * h;
-        width = (Math.random() * 20) + 1;
-        height = (Math.random() * 20) + 1;
-        g.drawRect(x, y, width, height);
-        g.endFill();
-      }
-      tex.render(container);
-      this._terrain_sprite = new PIXI.Sprite(tex);
+      this._terrain_sprite = new PIXI.TilingSprite(trn_tex, w, h);
       this._terrain_sprite.anchor.x = 0.5;
       this._terrain_sprite.anchor.y = 1;
       return this._terrain_sprite.mask = this._terrain_mask;
@@ -1560,45 +1543,13 @@
     };
 
     Planet.prototype._initBackground = function() {
-      var area_size, c, container, edge_w, g, h, height, s, s2, tex, w, width, x, x2, y, y2, _, _i, _j, _ref;
+      var atm_tex, edge_w, h, w;
 
+      atm_tex = PIXI.Texture.fromImage("assets/img/atm_solid_1.png");
       edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE);
       w = (this.size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE);
       h = settings.BG_TILE_SIZE * 2;
-      tex = new PIXI.RenderTexture(w, h);
-      container = new PIXI.DisplayObjectContainer();
-      g = new PIXI.Graphics();
-      container.addChild(g);
-      g.beginFill(0x0094FF);
-      g.drawRect(0, 0, w, h);
-      g.endFill();
-      for (_ = _i = 0; _i < 20; _ = ++_i) {
-        x = Math.random() * w;
-        y = h;
-        width = (Math.random() * 20) + 10;
-        height = width * (10 + (Math.random() * 10) - 5);
-        g.beginFill(0x7F3300);
-        g.drawRect(x - (width / 2), y - height, width, height);
-        g.endFill();
-        s = (height / 2) + ((Math.random() * 10) - 5);
-        x -= s / 2;
-        y -= height;
-        g.beginFill(0x007F0E);
-        g.drawRect(x, y, s, s);
-        g.endFill();
-        c = [0x005408, 0x00BC0F];
-        for (_ = _j = 0, _ref = Math.floor(Math.random() * 8) + 2; 0 <= _ref ? _j < _ref : _j > _ref; _ = 0 <= _ref ? ++_j : --_j) {
-          s2 = (s / 5) + ((Math.random() * 4) - 2);
-          area_size = s * 1.1;
-          x2 = (Math.random() * area_size) - (s * .1);
-          y2 = (Math.random() * area_size) - (s * .1);
-          g.beginFill(c[Math.floor(Math.random() * 2)]);
-          g.drawRect(x + x2, y + y2, s2, s2);
-          g.endFill();
-        }
-      }
-      tex.render(container);
-      this._background_sprite = new PIXI.Sprite(tex);
+      this._background_sprite = new PIXI.TilingSprite(atm_tex, w, h);
       this._background_sprite.anchor.x = 0.5;
       return this._background_sprite.anchor.y = 1;
     };
@@ -2063,7 +2014,7 @@
     var DOM_LOADED, assets, loader;
 
     DOM_LOADED = true;
-    assets = ["assets/img/jackie_chun.json", "assets/img/goku.json", "assets/img/bg_type1.json"];
+    assets = ["assets/img/jackie_chun.json", "assets/img/goku.json", "assets/img/planet_1.json"];
     loader = new PIXI.AssetLoader(assets);
     loader.onComplete = main;
     return loader.load();

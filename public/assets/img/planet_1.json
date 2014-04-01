@@ -1,0 +1,39 @@
+{"frames": {
+
+"atm_solid_1" :
+{
+	"frame": {"x":0,"y":770,"w":256,"h":256},
+	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":256},
+	"sourceSize": {"w":256,"h":256}
+},
+"atm_top_1" :
+{
+	"frame": {"x":513,"y":0,"w":256,"h":512},
+	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":512},
+	"sourceSize": {"w":256,"h":512}
+},
+"cloud_1" :
+{
+	"frame": {"x":0,"y":513,"w":512,"h":256},
+	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":256},
+	"sourceSize": {"w":512,"h":256}
+},
+"terrain_1" :
+{
+	"frame": {"x":0,"y":0,"w":512,"h":512},
+	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":512},
+	"sourceSize": {"w":512,"h":512}
+},
+"tree_1" :
+{
+	"frame": {"x":513,"y":513,"w":256,"h":512},
+	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":512},
+	"sourceSize": {"w":256,"h":512}
+}
+
+},
+"meta": {
+  "image": "planet_1.png",
+	"size": {"w":770,"h":1027}
+}
+}
