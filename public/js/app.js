@@ -13,7 +13,7 @@
     WIDTH: 1000,
     HEIGHT: 700,
     PPM: 30,
-    BG_TILE_SIZE: 256,
+    TILE_SIZE: 512,
     STAR_COUNT: 50,
     STAR_MIN_DEPTH: 1,
     STAR_MAX_DEPTH: 0,
@@ -1343,6 +1343,8 @@
 
     Planet.prototype.depth = 10;
 
+    Planet.prototype.height = 30;
+
     Planet.prototype.terrain = [];
 
     Planet.prototype.characters = [];
@@ -1452,7 +1454,7 @@
     };
 
     Planet.prototype._initTerrain = function() {
-      var cx, cy, edge_w, h, trn_tex, w;
+      var container, cx, cy, edge_w, h, h_count, tex, tile, w, w_count, x, y, _i, _j;
 
       w = this.size / 2;
       h = this.depth / 2;
@@ -1486,11 +1488,23 @@
           }
         ]
       ];
-      trn_tex = PIXI.Texture.fromImage("assets/img/terrain_1.png");
-      edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE);
-      w = (this.size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE);
+      edge_w = Math.ceil(settings.WIDTH / settings.TILE_SIZE);
+      w = (this.size * settings.PPM) + (edge_w * settings.TILE_SIZE);
       h = (this.depth + this.MAX_TERRAIN_HEIGHT) * settings.PPM;
-      this._terrain_sprite = new PIXI.TilingSprite(trn_tex, w, h);
+      tex = new PIXI.RenderTexture(w, h);
+      container = new PIXI.DisplayObjectContainer();
+      w_count = w / settings.TILE_SIZE;
+      h_count = h / settings.TILE_SIZE;
+      for (x = _i = 0; 0 <= w_count ? _i < w_count : _i > w_count; x = 0 <= w_count ? ++_i : --_i) {
+        for (y = _j = 0; 0 <= h_count ? _j < h_count : _j > h_count; y = 0 <= h_count ? ++_j : --_j) {
+          tile = PIXI.Sprite.fromFrame("terrain_1");
+          tile.position.x = x * settings.TILE_SIZE;
+          tile.position.y = y * settings.TILE_SIZE;
+          container.addChild(tile);
+        }
+      }
+      tex.render(container);
+      this._terrain_sprite = new PIXI.Sprite(tex);
       this._terrain_sprite.anchor.x = 0.5;
       this._terrain_sprite.anchor.y = 1;
       return this._terrain_sprite.mask = this._terrain_mask;
@@ -1543,13 +1557,54 @@
     };
 
     Planet.prototype._initBackground = function() {
-      var atm_tex, edge_w, h, w;
+      var cloud, container, edge_w, h, h_count, s, tex, tile, tile_size, tree, w, w_count, x, y, _, _i, _j, _k, _l, _ref, _ref1;
 
-      atm_tex = PIXI.Texture.fromImage("assets/img/atm_solid_1.png");
-      edge_w = Math.ceil(settings.WIDTH / settings.BG_TILE_SIZE);
-      w = (this.size * settings.PPM) + (edge_w * settings.BG_TILE_SIZE);
-      h = settings.BG_TILE_SIZE * 2;
-      this._background_sprite = new PIXI.TilingSprite(atm_tex, w, h);
+      tile = PIXI.Sprite.fromFrame("atm_solid_1");
+      tile_size = tile.width;
+      edge_w = Math.ceil(settings.WIDTH / tile_size);
+      w = (this.size * settings.PPM) + (edge_w * tile_size);
+      h = tile_size * 4;
+      tex = new PIXI.RenderTexture(w, h);
+      container = new PIXI.DisplayObjectContainer();
+      w_count = w / tile_size;
+      h_count = h / tile_size - 2;
+      for (x = _i = 0; 0 <= w_count ? _i < w_count : _i > w_count; x = 0 <= w_count ? ++_i : --_i) {
+        for (y = _j = 0; 0 <= h_count ? _j < h_count : _j > h_count; y = 0 <= h_count ? ++_j : --_j) {
+          tile = PIXI.Sprite.fromFrame("atm_solid_1");
+          tile.position.x = x * tile_size;
+          tile.position.y = y * tile_size + 2 * tile_size;
+          container.addChild(tile);
+        }
+        tile = PIXI.Sprite.fromFrame("atm_top_1");
+        tile.position.x = x * tile_size;
+        tile.position.y = 0;
+        container.addChild(tile);
+      }
+      for (_ = _k = 0, _ref = Math.round(Math.random() * 10 + 10); 0 <= _ref ? _k < _ref : _k > _ref; _ = 0 <= _ref ? ++_k : --_k) {
+        x = Math.random() * w;
+        tree = PIXI.Sprite.fromFrame("tree_1");
+        tree.anchor.x = 0.5;
+        tree.anchor.y = 1;
+        tree.position.x = x;
+        tree.position.y = h;
+        s = Math.random() * 0.5 + 0.5;
+        tree.scale.x = s;
+        tree.scale.y = s;
+        container.addChild(tree);
+      }
+      for (_ = _l = 0, _ref1 = Math.round(Math.random() * 10 + 10); 0 <= _ref1 ? _l < _ref1 : _l > _ref1; _ = 0 <= _ref1 ? ++_l : --_l) {
+        x = Math.random() * w;
+        y = Math.random() * h / 2;
+        cloud = PIXI.Sprite.fromFrame("cloud_1");
+        cloud.position.x = x;
+        cloud.position.y = y;
+        s = Math.random() * 0.5 + 0.5;
+        cloud.scale.x = s;
+        cloud.scale.y = s;
+        container.addChild(cloud);
+      }
+      tex.render(container);
+      this._background_sprite = new PIXI.Sprite(tex);
       this._background_sprite.anchor.x = 0.5;
       return this._background_sprite.anchor.y = 1;
     };
@@ -1562,7 +1617,7 @@
       var new_w, w;
 
       w = size * settings.PPM;
-      new_w = Math.ceil(w / settings.BG_TILE_SIZE) * settings.BG_TILE_SIZE;
+      new_w = Math.ceil(w / settings.TILE_SIZE) * settings.TILE_SIZE;
       return new_w / settings.PPM;
     };
 
