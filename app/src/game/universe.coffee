@@ -103,15 +103,11 @@ class Universe
 
     min_x = bounds.x - bounds.w / 2
     max_x = min_x + bounds.w * 2
-    min_y = bounds.y - bounds.h / 2
-    max_y = min_y + bounds.h * 2
 
     alt_x = boundedValue(pos.x + bounds.w, min_x, max_x)
-    alt_y = boundedValue(pos.y + bounds.h, min_y, max_y)
 
     # Check all cases
-    alt_pos = [{x: alt_x, y: pos.y}, {x: pos.x, y: alt_y}, {x: alt_x, y: alt_y},
-      pos]
+    alt_pos = [{x: alt_x, y: pos.y}, pos]
     screen_alt_pos = null
     min_dist = null
     for pos in alt_pos
@@ -133,9 +129,8 @@ class Universe
       bounds = @getBounds()
 
     x = boundedValue(point.x, bounds.x, bounds.x + bounds.w)
-    y = boundedValue(point.y, bounds.y, bounds.y + bounds.h)
 
-    return {x: x, y: y}
+    return {x: x, y: point.y}
 
   addDebugDrawFlag: (flag) ->
     flags = @_debug_drawer.GetFlags()

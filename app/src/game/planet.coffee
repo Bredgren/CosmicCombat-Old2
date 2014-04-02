@@ -79,9 +79,7 @@ class Planet
   getBounds: () ->
     return {
       x: -@size / 2
-      y: -@size * 2
       w: @size
-      h: @size * 2 + @depth
     }
 
   # Adds physics items to the world, ...

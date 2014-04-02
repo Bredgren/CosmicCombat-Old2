@@ -722,6 +722,7 @@
           Char = Jackie;
           break;
         case this.GOKU:
+        case this.DEFAULT:
           Char = Goku;
       }
       return new Char(universe, init_pos, click_callback);
@@ -1195,7 +1196,7 @@
 
     v = value - min;
     if (v < 0) {
-      v = max - v;
+      v = max + v;
     } else {
       v = (v % (max - min)) + min;
     }
@@ -1433,9 +1434,7 @@
     Planet.prototype.getBounds = function() {
       return {
         x: -this.size / 2,
-        y: -this.size * 2,
-        w: this.size,
-        h: this.size * 2 + this.depth
+        w: this.size
       };
     };
 
@@ -1726,7 +1725,7 @@
     };
 
     Universe.prototype.getDrawingPosWrapped = function(pos, bounds) {
-      var alt_pos, alt_x, alt_y, dist, max_x, max_y, min_dist, min_x, min_y, p, screen_alt_pos, screen_pos, _i, _len;
+      var alt_pos, alt_x, dist, max_x, min_dist, min_x, p, screen_alt_pos, screen_pos, _i, _len;
 
       screen_pos = this.camera.worldToScreen(pos);
       if (this.camera.onScreen(screen_pos)) {
@@ -1737,20 +1736,11 @@
       }
       min_x = bounds.x - bounds.w / 2;
       max_x = min_x + bounds.w * 2;
-      min_y = bounds.y - bounds.h / 2;
-      max_y = min_y + bounds.h * 2;
       alt_x = boundedValue(pos.x + bounds.w, min_x, max_x);
-      alt_y = boundedValue(pos.y + bounds.h, min_y, max_y);
       alt_pos = [
         {
           x: alt_x,
           y: pos.y
-        }, {
-          x: pos.x,
-          y: alt_y
-        }, {
-          x: alt_x,
-          y: alt_y
         }, pos
       ];
       screen_alt_pos = null;
@@ -1772,16 +1762,15 @@
     };
 
     Universe.prototype.boundedPoint = function(point, bounds) {
-      var x, y;
+      var x;
 
       if (!bounds) {
         bounds = this.getBounds();
       }
       x = boundedValue(point.x, bounds.x, bounds.x + bounds.w);
-      y = boundedValue(point.y, bounds.y, bounds.y + bounds.h);
       return {
         x: x,
-        y: y
+        y: point.y
       };
     };
 

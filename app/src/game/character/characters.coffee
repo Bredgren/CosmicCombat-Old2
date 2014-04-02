@@ -17,6 +17,6 @@ class Characters
     Char = null
     switch type
       when @JACKIE then Char = Jackie
-      when @GOKU then Char = Goku
+      when @GOKU, @DEFAULT then Char = Goku
 
     return new Char(universe, init_pos, click_callback)
