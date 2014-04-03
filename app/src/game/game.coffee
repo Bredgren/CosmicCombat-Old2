@@ -159,44 +159,10 @@ class Game
   onKeyDown: (key_code) ->
     if @_controlled_char
       @key_bindings.onKeyDown(key_code)
-      # switch key_code
-      #   when settings.BINDINGS.LEFT
-      #     @_controlled_char.startLeft()
-      #   when settings.BINDINGS.RIGHT
-      #     @_controlled_char.startRight()
-      #   when settings.BINDINGS.UP
-      #     @_controlled_char.startUp()
-      #   when settings.BINDINGS.DOWN
-      #     @_controlled_char.startDown()
-      #   when settings.BINDINGS.POWER_UP
-      #     @_controlled_char.startPowerUp()
-      #   when settings.BINDINGS.POWER_DOWN
-      #     @_controlled_char.startPowerDown()
-      #   when settings.BINDINGS.FLY
-      #     @_controlled_char.startFly()
-      #   when settings.BINDINGS.BLOCK
-      #     @_controlled_char.startBlock()
 
   onKeyUp: (key_code) ->
     if @_controlled_char
       @key_bindings.onKeyUp(key_code)
-      # switch key_code
-      #   when settings.BINDINGS.LEFT
-      #     @_controlled_char.endLeft()
-      #   when settings.BINDINGS.RIGHT
-      #     @_controlled_char.endRight()
-      #   when settings.BINDINGS.UP
-      #     @_controlled_char.endUp()
-      #   when settings.BINDINGS.DOWN
-      #     @_controlled_char.endDown()
-      #   when settings.BINDINGS.POWER_UP
-      #     @_controlled_char.endPowerUp()
-      #   when settings.BINDINGS.POWER_DOWN
-      #     @_controlled_char.endPowerDown()
-      #   when settings.BINDINGS.FLY
-      #     @_controlled_char.endFly()
-      #   when settings.BINDINGS.BLOCK
-      #     @_controlled_char.endBlock()
 
   onMouseDown: (screen_pos) ->
     @_mouse_down = true

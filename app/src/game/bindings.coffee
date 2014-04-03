@@ -8,6 +8,11 @@ class Bindings
     @COLEMAK
   ]
 
+  @COLEMAK_MAP: # Colemak -> Us
+    82: 83 # R -> S  Pushing the S key types R
+    83: 68 # S -> D
+    70: 69 # E -> F
+
   layout: @COLEMAK
   actions: {}
 
@@ -20,9 +25,20 @@ class Bindings
 
   # Triggers the action for the given key
   onKeyDown: (key) ->
+    key = @_getLayoutKey(key)
     if key not of @actions then return
     @actions[key][0]()
 
   onKeyUp: (key) ->
+    key = @_getLayoutKey(key)
     if key not of @actions then return
     @actions[key][1]()
+
+  _getLayoutKey: (key) ->
+    switch @layout
+      when Bindings.US
+        return key
+      when Bindings.COLEMAK
+        if key not of Bindings.COLEMAK_MAP
+          return key
+        return Bindings.COLEMAK_MAP[key]
