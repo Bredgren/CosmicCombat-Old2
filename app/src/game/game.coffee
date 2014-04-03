@@ -1,5 +1,6 @@
 
 #_require ../config
+#_require ./bindings
 #_require ./camera
 #_require ./character/characters
 #_require ./dev_gui
@@ -10,6 +11,7 @@ class Game
   camera: null
   paused: false
   camera_attached: true
+  key_bindings: null
 
   universe: null
   _last_mouse_pos: {x: 0, y: 0}
@@ -71,6 +73,9 @@ class Game
 
     if settings.DEBUG and not @_dev_gui.enabled
       @_dev_gui.toggleDevMode()
+
+    @key_bindings = new Bindings()
+    @_initKeyBindings()
 
   update: () ->
     if not @paused
@@ -153,43 +158,45 @@ class Game
 
   onKeyDown: (key_code) ->
     if @_controlled_char
-      switch key_code
-        when settings.BINDINGS.LEFT
-          @_controlled_char.startLeft()
-        when settings.BINDINGS.RIGHT
-          @_controlled_char.startRight()
-        when settings.BINDINGS.UP
-          @_controlled_char.startUp()
-        when settings.BINDINGS.DOWN
-          @_controlled_char.startDown()
-        when settings.BINDINGS.POWER_UP
-          @_controlled_char.startPowerUp()
-        when settings.BINDINGS.POWER_DOWN
-          @_controlled_char.startPowerDown()
-        when settings.BINDINGS.FLY
-          @_controlled_char.startFly()
-        when settings.BINDINGS.BLOCK
-          @_controlled_char.startBlock()
+      @key_bindings.onKeyDown(key_code)
+      # switch key_code
+      #   when settings.BINDINGS.LEFT
+      #     @_controlled_char.startLeft()
+      #   when settings.BINDINGS.RIGHT
+      #     @_controlled_char.startRight()
+      #   when settings.BINDINGS.UP
+      #     @_controlled_char.startUp()
+      #   when settings.BINDINGS.DOWN
+      #     @_controlled_char.startDown()
+      #   when settings.BINDINGS.POWER_UP
+      #     @_controlled_char.startPowerUp()
+      #   when settings.BINDINGS.POWER_DOWN
+      #     @_controlled_char.startPowerDown()
+      #   when settings.BINDINGS.FLY
+      #     @_controlled_char.startFly()
+      #   when settings.BINDINGS.BLOCK
+      #     @_controlled_char.startBlock()
 
   onKeyUp: (key_code) ->
     if @_controlled_char
-      switch key_code
-        when settings.BINDINGS.LEFT
-          @_controlled_char.endLeft()
-        when settings.BINDINGS.RIGHT
-          @_controlled_char.endRight()
-        when settings.BINDINGS.UP
-          @_controlled_char.endUp()
-        when settings.BINDINGS.DOWN
-          @_controlled_char.endDown()
-        when settings.BINDINGS.POWER_UP
-          @_controlled_char.endPowerUp()
-        when settings.BINDINGS.POWER_DOWN
-          @_controlled_char.endPowerDown()
-        when settings.BINDINGS.FLY
-          @_controlled_char.endFly()
-        when settings.BINDINGS.BLOCK
-          @_controlled_char.endBlock()
+      @key_bindings.onKeyUp(key_code)
+      # switch key_code
+      #   when settings.BINDINGS.LEFT
+      #     @_controlled_char.endLeft()
+      #   when settings.BINDINGS.RIGHT
+      #     @_controlled_char.endRight()
+      #   when settings.BINDINGS.UP
+      #     @_controlled_char.endUp()
+      #   when settings.BINDINGS.DOWN
+      #     @_controlled_char.endDown()
+      #   when settings.BINDINGS.POWER_UP
+      #     @_controlled_char.endPowerUp()
+      #   when settings.BINDINGS.POWER_DOWN
+      #     @_controlled_char.endPowerDown()
+      #   when settings.BINDINGS.FLY
+      #     @_controlled_char.endFly()
+      #   when settings.BINDINGS.BLOCK
+      #     @_controlled_char.endBlock()
 
   onMouseDown: (screen_pos) ->
     @_mouse_down = true
@@ -212,3 +219,36 @@ class Game
     @_dev_gui.onMouseMove(screen_pos)
 
   onMouseWheel: (delta) ->
+
+  _initKeyBindings: () ->
+    @key_bindings.bind(settings.BINDINGS.LEFT,
+      () => @_controlled_char.startLeft(),
+      () => @_controlled_char.endLeft())
+
+    @key_bindings.bind(settings.BINDINGS.RIGHT,
+      () => @_controlled_char.startRight(),
+      () => @_controlled_char.endRight())
+
+    @key_bindings.bind(settings.BINDINGS.UP,
+      () => @_controlled_char.startUp(),
+      () => @_controlled_char.endUp())
+
+    @key_bindings.bind(settings.BINDINGS.DOWN,
+      () => @_controlled_char.startDown(),
+      () => @_controlled_char.endDown())
+
+    @key_bindings.bind(settings.BINDINGS.POWER_UP,
+      () => @_controlled_char.startPowerUp(),
+      () => @_controlled_char.endPowerUp())
+
+    @key_bindings.bind(settings.BINDINGS.POWER_DOWN,
+      () => @_controlled_char.startPowerDown(),
+      () => @_controlled_char.endPowerDown())
+
+    @key_bindings.bind(settings.BINDINGS.FLY,
+      () => @_controlled_char.startFly(),
+      () => @_controlled_char.endFly())
+
+    @key_bindings.bind(settings.BINDINGS.BLOCK,
+      () => @_controlled_char.startBlock(),
+      () => @_controlled_char.endBlock())
