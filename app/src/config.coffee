@@ -17,6 +17,13 @@ settings = {
   BOX2D_VI: 10  # Velocity iterations
   BOX2D_PI: 10  # Position iterations
 
+  COLLISION_CATEGORY:
+    TERRAIN:   0x0001
+    CHARACTER: 0x0002
+
+  COLLISION_GROUP:
+    CHARACTER: -1
+
   BINDINGS:
     LEFT:  65 # A
     RIGHT: 68 # D

@@ -279,10 +279,20 @@ class BaseCharacter
     box = new b2Shapes.b2PolygonShape()
     box.SetAsBox(@_w, @_h)
     @_body_box = @body.CreateFixture2(box, 5)
+    f = @_body_box.GetFilterData()
+    # f.categoryBits = settings.COLLISION_CATEGORY.CHARACTER
+    # f.maskBits = settings.COLLISION_CATEGORY.TERRAIN
+    f.groupIndex = settings.COLLISION_GROUP.CHARACTER
+    @_body_box.SetFilterData(f)
 
     circle = new b2Shapes.b2CircleShape(@_w+0.01) #.01 prevents catching on box
     circle.SetLocalPosition(new b2Vec2(0, @_h))
     @_body_circle = @body.CreateFixture2(circle, 0)
+    f = @_body_circle.GetFilterData()
+    # f.categoryBits = settings.COLLISION_CATEGORY.CHARACTER
+    # f.maskBits = settings.COLLISION_CATEGORY.TERRAIN
+    f.groupIndex = settings.COLLISION_GROUP.CHARACTER
+    @_body_circle.SetFilterData(f)
     @_body_circle.SetRestitution(0)
 
     fixDef = new b2Dynamics.b2FixtureDef()

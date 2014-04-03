@@ -21,6 +21,13 @@
     BOX2D_TIME_STEP: 1 / 60,
     BOX2D_VI: 10,
     BOX2D_PI: 10,
+    COLLISION_CATEGORY: {
+      TERRAIN: 0x0001,
+      CHARACTER: 0x0002
+    },
+    COLLISION_GROUP: {
+      CHARACTER: -1
+    },
     BINDINGS: {
       LEFT: 65,
       RIGHT: 68,
@@ -580,7 +587,7 @@
     };
 
     BaseCharacter.prototype._createBody = function(pos) {
-      var bodyDef, box, circle, fixDef, h, offx, offy, v, w;
+      var bodyDef, box, circle, f, fixDef, h, offx, offy, v, w;
 
       bodyDef = new b2Dynamics.b2BodyDef();
       bodyDef.type = b2Dynamics.b2Body.b2_dynamicBody;
@@ -588,9 +595,15 @@
       box = new b2Shapes.b2PolygonShape();
       box.SetAsBox(this._w, this._h);
       this._body_box = this.body.CreateFixture2(box, 5);
+      f = this._body_box.GetFilterData();
+      f.groupIndex = settings.COLLISION_GROUP.CHARACTER;
+      this._body_box.SetFilterData(f);
       circle = new b2Shapes.b2CircleShape(this._w + 0.01);
       circle.SetLocalPosition(new b2Vec2(0, this._h));
       this._body_circle = this.body.CreateFixture2(circle, 0);
+      f = this._body_circle.GetFilterData();
+      f.groupIndex = settings.COLLISION_GROUP.CHARACTER;
+      this._body_circle.SetFilterData(f);
       this._body_circle.SetRestitution(0);
       fixDef = new b2Dynamics.b2FixtureDef();
       w = this._w * 0.8;
