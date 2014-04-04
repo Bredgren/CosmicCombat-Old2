@@ -87,9 +87,23 @@
     Bindings.LAYOUTS = [Bindings.US, Bindings.COLEMAK];
 
     Bindings.COLEMAK_MAP = {
+      68: 71,
+      69: 75,
+      70: 69,
+      71: 84,
+      73: 76,
+      74: 89,
+      75: 78,
+      76: 85,
+      78: 74,
+      79: 186,
+      80: 82,
       82: 83,
       83: 68,
-      70: 69
+      84: 70,
+      85: 73,
+      89: 79,
+      186: 80
     };
 
     Bindings.prototype.layout = Bindings.COLEMAK;
@@ -103,7 +117,7 @@
     };
 
     Bindings.prototype.onKeyDown = function(key) {
-      key = this._getLayoutKey(key);
+      key = this._getUSKey(key);
       if (!(key in this.actions)) {
         return;
       }
@@ -111,14 +125,14 @@
     };
 
     Bindings.prototype.onKeyUp = function(key) {
-      key = this._getLayoutKey(key);
+      key = this._getUSKey(key);
       if (!(key in this.actions)) {
         return;
       }
       return this.actions[key][1]();
     };
 
-    Bindings.prototype._getLayoutKey = function(key) {
+    Bindings.prototype._getUSKey = function(key) {
       switch (this.layout) {
         case Bindings.US:
           return key;
