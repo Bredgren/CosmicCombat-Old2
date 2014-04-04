@@ -106,22 +106,47 @@
       186: 80
     };
 
-    Bindings.prototype.layout = Bindings.COLEMAK;
+    Bindings.prototype.layout = Bindings.US;
 
     Bindings.prototype.actions = {};
 
     function Bindings() {}
 
     Bindings.prototype.bind = function(key, actionDown, actionUp) {
-      return this.actions[key] = [actionDown, actionUp];
+      var us_key;
+
+      us_key = this._getUSKey(key);
+      this.actions[us_key] = [actionDown, actionUp];
+      return {
+        layout: this.layout,
+        key: key
+      };
+    };
+
+    Bindings.prototype.rebind = function(old_key, new_key) {
+      var new_us_key;
+
+      old_key = this._getUSKey(old_key.key, old_key.layout);
+      if (!(old_key in this.actions)) {
+        return;
+      }
+      new_us_key = this._getUSKey(new_key);
+      this.actions[new_us_key] = this.actions[old_key];
+      delete this.actions[old_key];
+      return {
+        layout: this.layout,
+        key: new_key
+      };
     };
 
     Bindings.prototype.onKeyDown = function(key) {
-      key = this._getUSKey(key);
-      if (!(key in this.actions)) {
+      var us_key;
+
+      us_key = this._getUSKey(key);
+      if (!(us_key in this.actions)) {
         return;
       }
-      return this.actions[key][0]();
+      return this.actions[us_key][0]();
     };
 
     Bindings.prototype.onKeyUp = function(key) {
@@ -132,8 +157,11 @@
       return this.actions[key][1]();
     };
 
-    Bindings.prototype._getUSKey = function(key) {
-      switch (this.layout) {
+    Bindings.prototype._getUSKey = function(key, layout) {
+      if (!layout) {
+        layout = this.layout;
+      }
+      switch (layout) {
         case Bindings.US:
           return key;
         case Bindings.COLEMAK:
@@ -142,6 +170,16 @@
           }
           return Bindings.COLEMAK_MAP[key];
       }
+    };
+
+    Bindings.prototype._printKey = function(key, us_key) {
+      var code_a, code_b, s_a, s_b;
+
+      code_a = 96 <= key && key <= 105 ? key - 48 : key;
+      code_b = 96 <= us_key && us_key <= 105 ? us_key - 48 : us_key;
+      s_a = String.fromCharCode(code_a);
+      s_b = String.fromCharCode(code_b);
+      return console.log("" + s_a + "(" + key + ") -> " + s_b + "(" + us_key + ")");
     };
 
     return Bindings;
@@ -1901,6 +1939,8 @@
 
     Game.prototype.key_bindings = null;
 
+    Game.prototype.keys = {};
+
     Game.prototype.universe = null;
 
     Game.prototype._last_mouse_pos = {
@@ -2105,46 +2145,47 @@
     Game.prototype._initKeyBindings = function() {
       var _this = this;
 
-      this.key_bindings.bind(settings.BINDINGS.LEFT, function() {
+      this.keys.left = this.key_bindings.bind(settings.BINDINGS.LEFT, function() {
         return _this._controlled_char.startLeft();
       }, function() {
         return _this._controlled_char.endLeft();
       });
-      this.key_bindings.bind(settings.BINDINGS.RIGHT, function() {
+      this.keys.right = this.key_bindings.bind(settings.BINDINGS.RIGHT, function() {
         return _this._controlled_char.startRight();
       }, function() {
         return _this._controlled_char.endRight();
       });
-      this.key_bindings.bind(settings.BINDINGS.UP, function() {
+      this.keys.up = this.key_bindings.bind(settings.BINDINGS.UP, function() {
         return _this._controlled_char.startUp();
       }, function() {
         return _this._controlled_char.endUp();
       });
-      this.key_bindings.bind(settings.BINDINGS.DOWN, function() {
+      this.keys.down = this.key_bindings.bind(settings.BINDINGS.DOWN, function() {
         return _this._controlled_char.startDown();
       }, function() {
         return _this._controlled_char.endDown();
       });
-      this.key_bindings.bind(settings.BINDINGS.POWER_UP, function() {
+      this.keys.power_up = this.key_bindings.bind(settings.BINDINGS.POWER_UP, function() {
         return _this._controlled_char.startPowerUp();
       }, function() {
         return _this._controlled_char.endPowerUp();
       });
-      this.key_bindings.bind(settings.BINDINGS.POWER_DOWN, function() {
+      this.keys.power_down = this.key_bindings.bind(settings.BINDINGS.POWER_DOWN, function() {
         return _this._controlled_char.startPowerDown();
       }, function() {
         return _this._controlled_char.endPowerDown();
       });
-      this.key_bindings.bind(settings.BINDINGS.FLY, function() {
+      this.keys.fly = this.key_bindings.bind(settings.BINDINGS.FLY, function() {
         return _this._controlled_char.startFly();
       }, function() {
         return _this._controlled_char.endFly();
       });
-      return this.key_bindings.bind(settings.BINDINGS.BLOCK, function() {
+      this.keys.block = this.key_bindings.bind(settings.BINDINGS.BLOCK, function() {
         return _this._controlled_char.startBlock();
       }, function() {
         return _this._controlled_char.endBlock();
       });
+      return this.key_bindings.layout = Bindings.COLEMAK;
     };
 
     return Game;

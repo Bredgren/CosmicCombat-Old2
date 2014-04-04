@@ -27,34 +27,55 @@ class Bindings
     89: 79 # Y -> O
     186: 80 # ; -> P
 
-  layout: @COLEMAK
+  layout: @US
   actions: {}
 
   constructor: () ->
 
   # actionDown and actionUp should be the function to call when the given key
   # is pushed or released respectively
+  # Returns an object which can be used to rebind the key
   bind: (key, actionDown, actionUp) ->
-    @actions[key] = [actionDown, actionUp]
+    us_key = @_getUSKey(key)
+    @actions[us_key] = [actionDown, actionUp]
+    return {layout: @layout, key: key}
+
+  # old_key needs to be an object of the type returned by bind
+  rebind: (old_key, new_key) ->
+    old_key = @_getUSKey(old_key.key, old_key.layout)
+    if old_key not of @actions then return
+    new_us_key = @_getUSKey(new_key)
+    @actions[new_us_key] = @actions[old_key]
+    delete @actions[old_key]
+    return {layout: @layout, key: new_key}
 
   # Triggers the action for the given key
   onKeyDown: (key) ->
-    key = @_getUSKey(key)
-    # code = if (96 <= key and key <= 105) then key-48 else key
-    # console.log(String.fromCharCode(code), key)
-    if key not of @actions then return
-    @actions[key][0]()
+    us_key = @_getUSKey(key)
+    # @_printKey(key, us_key)
+    if us_key not of @actions then return
+    @actions[us_key][0]()
 
   onKeyUp: (key) ->
     key = @_getUSKey(key)
     if key not of @actions then return
     @actions[key][1]()
 
-  _getUSKey: (key) ->
-    switch @layout
+  _getUSKey: (key, layout) ->
+    if not layout
+      layout = @layout
+
+    switch layout
       when Bindings.US
         return key
       when Bindings.COLEMAK
         if key not of Bindings.COLEMAK_MAP
           return key
         return Bindings.COLEMAK_MAP[key]
+
+  _printKey: (key, us_key) ->
+    code_a = if (96 <= key and key <= 105) then key-48 else key
+    code_b = if (96 <= us_key and us_key <= 105) then us_key-48 else us_key
+    s_a = String.fromCharCode(code_a)
+    s_b = String.fromCharCode(code_b)
+    console.log("#{s_a}(#{key}) -> #{s_b}(#{us_key})")

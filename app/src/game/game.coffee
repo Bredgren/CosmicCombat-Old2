@@ -12,6 +12,7 @@ class Game
   paused: false
   camera_attached: true
   key_bindings: null
+  keys: {}
 
   universe: null
   _last_mouse_pos: {x: 0, y: 0}
@@ -187,34 +188,37 @@ class Game
   onMouseWheel: (delta) ->
 
   _initKeyBindings: () ->
-    @key_bindings.bind(settings.BINDINGS.LEFT,
+    @keys.left = @key_bindings.bind(settings.BINDINGS.LEFT,
       () => @_controlled_char.startLeft(),
       () => @_controlled_char.endLeft())
 
-    @key_bindings.bind(settings.BINDINGS.RIGHT,
+    @keys.right = @key_bindings.bind(settings.BINDINGS.RIGHT,
       () => @_controlled_char.startRight(),
       () => @_controlled_char.endRight())
 
-    @key_bindings.bind(settings.BINDINGS.UP,
+    @keys.up = @key_bindings.bind(settings.BINDINGS.UP,
       () => @_controlled_char.startUp(),
       () => @_controlled_char.endUp())
 
-    @key_bindings.bind(settings.BINDINGS.DOWN,
+    @keys.down = @key_bindings.bind(settings.BINDINGS.DOWN,
       () => @_controlled_char.startDown(),
       () => @_controlled_char.endDown())
 
-    @key_bindings.bind(settings.BINDINGS.POWER_UP,
+    @keys.power_up = @key_bindings.bind(settings.BINDINGS.POWER_UP,
       () => @_controlled_char.startPowerUp(),
       () => @_controlled_char.endPowerUp())
 
-    @key_bindings.bind(settings.BINDINGS.POWER_DOWN,
+    @keys.power_down = @key_bindings.bind(settings.BINDINGS.POWER_DOWN,
       () => @_controlled_char.startPowerDown(),
       () => @_controlled_char.endPowerDown())
 
-    @key_bindings.bind(settings.BINDINGS.FLY,
+    @keys.fly = @key_bindings.bind(settings.BINDINGS.FLY,
       () => @_controlled_char.startFly(),
       () => @_controlled_char.endFly())
 
-    @key_bindings.bind(settings.BINDINGS.BLOCK,
+    @keys.block = @key_bindings.bind(settings.BINDINGS.BLOCK,
       () => @_controlled_char.startBlock(),
       () => @_controlled_char.endBlock())
+
+    # Bindings are set in US layout so set to user's preference after
+    @key_bindings.layout = Bindings.COLEMAK
