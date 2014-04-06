@@ -37,7 +37,15 @@ settings = {
     FLY: 16 # SHIFT
     #Items
     #Physical Attacks
+    P_LEFT: 37
+    P_UP: 38
+    P_RIGHT: 39
+    P_DOWN: 40
     #Energy Attacks
+    E1: 85 # U
+    E2: 73 # I
+    E3: 79 # O
+    E4: 80 # P
 }
 
 settings.ENERGY_BAR =

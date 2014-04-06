@@ -34,6 +34,21 @@ class Game
 
   _dev_gui: null
 
+  combos: []
+  pressed_combo:
+    keys: []
+    start_time: 0
+
+  KEY_NAMES:
+    P_LEFT: 0
+    P_UP: 1
+    P_RIGHT: 2
+    P_DOWN: 3
+    E1: 4
+    E2: 5
+    E3: 6
+    E4: 7
+
   constructor: (@stage) ->
     @hud_stage = new PIXI.DisplayObjectContainer()
     @game_stage = new PIXI.DisplayObjectContainer()
@@ -77,6 +92,22 @@ class Game
 
     @key_bindings = new Bindings()
     @_initKeyBindings()
+
+    combo = {}
+    combo.keys = []
+    combo.keys.push(@KEY_NAMES.E2)
+    combo.keys.push(@KEY_NAMES.E1)
+    combo.keys.push(@KEY_NAMES.E3)
+    combo.action = @_onCombo1
+    @combos.push(combo)
+
+    combo = {}
+    combo.keys = []
+    combo.keys.push(@KEY_NAMES.E4)
+    combo.keys.push(@KEY_NAMES.E3)
+    combo.keys.push(@KEY_NAMES.E2)
+    combo.action = @_onCombo2
+    @combos.push(combo)
 
   update: () ->
     if not @paused
@@ -187,6 +218,51 @@ class Game
 
   onMouseWheel: (delta) ->
 
+  _onEnergyComboButtonDown: (combo_button) ->
+    if combo_button in @pressed_combo.keys then return
+    if @pressed_combo.keys.length is 0
+      @pressed_combo.start_time = (new Date()).getTime()
+    @pressed_combo.keys.push(combo_button)
+    console.log(@pressed_combo.keys)
+    for combo in @combos
+      if combo.keys.length is @pressed_combo.keys.length
+        same = true
+        for i in [0...combo.keys.length]
+          if combo.keys[i] isnt @pressed_combo.keys[i]
+            same = false
+            break
+        if same
+          end_time = (new Date()).getTime()
+          time = end_time - @pressed_combo.start_time
+          combo.action(time)
+          break
+
+  _onEnergyComboButtonUp: (combo_button) ->
+    @pressed_combo.keys = @pressed_combo.keys.filter((b) -> b isnt combo_button)
+    console.log(@pressed_combo.keys)
+
+  _onPhysicalComboButtonDown: (combo_button) ->
+    s = ""
+    switch combo_button
+      when @KEY_NAMES.P_LEFT
+        s = "left"
+      when @KEY_NAMES.P_UP
+        s = "up"
+      when @KEY_NAMES.P_RIGHT
+        s = "right"
+      when @KEY_NAMES.P_DOWN
+        s = "down"
+
+    console.log("physical attack #{s}")
+
+  _onPhysicalComboButtonUp: (combo_button) ->
+
+  _onCombo1: (time) ->
+    console.log("executed combo1 in #{time} ms")
+
+  _onCombo2: (time) ->
+    console.log("executed combo2 in #{time} ms")
+
   _initKeyBindings: () ->
     @keys.left = @key_bindings.bind(settings.BINDINGS.LEFT,
       () => @_controlled_char.startLeft(),
@@ -219,6 +295,38 @@ class Game
     @keys.block = @key_bindings.bind(settings.BINDINGS.BLOCK,
       () => @_controlled_char.startBlock(),
       () => @_controlled_char.endBlock())
+
+    @keys.p_left = @key_bindings.bind(settings.BINDINGS.P_LEFT,
+      () => @_onPhysicalComboButtonDown(@KEY_NAMES.P_LEFT),
+      () => @_onPhysicalComboButtonUp(@KEY_NAMES.P_LEFT))
+
+    @keys.p_up = @key_bindings.bind(settings.BINDINGS.P_UP,
+      () => @_onPhysicalComboButtonDown(@KEY_NAMES.P_UP),
+      () => @_onPhysicalComboButtonUp(@KEY_NAMES.P_UP))
+
+    @keys.p_right = @key_bindings.bind(settings.BINDINGS.P_RIGHT,
+      () => @_onPhysicalComboButtonDown(@KEY_NAMES.P_RIGHT),
+      () => @_onPhysicalComboButtonUp(@KEY_NAMES.P_RIGHT))
+
+    @keys.p_down = @key_bindings.bind(settings.BINDINGS.P_DOWN,
+      () => @_onPhysicalComboButtonDown(@KEY_NAMES.P_DOWN),
+      () => @_onPhysicalComboButtonUp(@KEY_NAMES.P_DOWN))
+
+    @keys.e1 = @key_bindings.bind(settings.BINDINGS.E1,
+      () => @_onEnergyComboButtonDown(@KEY_NAMES.E1),
+      () => @_onEnergyComboButtonUp(@KEY_NAMES.E1))
+
+    @keys.e2 = @key_bindings.bind(settings.BINDINGS.E2,
+      () => @_onEnergyComboButtonDown(@KEY_NAMES.E2),
+      () => @_onEnergyComboButtonUp(@KEY_NAMES.E2))
+
+    @keys.e3 = @key_bindings.bind(settings.BINDINGS.E3,
+      () => @_onEnergyComboButtonDown(@KEY_NAMES.E3),
+      () => @_onEnergyComboButtonUp(@KEY_NAMES.E3))
+
+    @keys.e4 = @key_bindings.bind(settings.BINDINGS.E4,
+      () => @_onEnergyComboButtonDown(@KEY_NAMES.E4),
+      () => @_onEnergyComboButtonUp(@KEY_NAMES.E4))
 
     # Bindings are set in US layout so set to user's preference after
     @key_bindings.layout = Bindings.COLEMAK

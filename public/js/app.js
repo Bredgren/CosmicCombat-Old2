@@ -4,6 +4,7 @@
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __slice = [].slice;
 
   settings = {
@@ -38,7 +39,15 @@
       BLOCK: 32,
       PAUSE: 27,
       INTERACT: 67,
-      FLY: 16
+      FLY: 16,
+      P_LEFT: 37,
+      P_UP: 38,
+      P_RIGHT: 39,
+      P_DOWN: 40,
+      E1: 85,
+      E2: 73,
+      E3: 79,
+      E4: 80
     }
   };
 
@@ -1971,8 +1980,26 @@
 
     Game.prototype._dev_gui = null;
 
+    Game.prototype.combos = [];
+
+    Game.prototype.pressed_combo = {
+      keys: [],
+      start_time: 0
+    };
+
+    Game.prototype.KEY_NAMES = {
+      P_LEFT: 0,
+      P_UP: 1,
+      P_RIGHT: 2,
+      P_DOWN: 3,
+      E1: 4,
+      E2: 5,
+      E3: 6,
+      E4: 7
+    };
+
     function Game(stage) {
-      var style;
+      var combo, style;
 
       this.stage = stage;
       this.hud_stage = new PIXI.DisplayObjectContainer();
@@ -2012,6 +2039,20 @@
       }
       this.key_bindings = new Bindings();
       this._initKeyBindings();
+      combo = {};
+      combo.keys = [];
+      combo.keys.push(this.KEY_NAMES.E2);
+      combo.keys.push(this.KEY_NAMES.E1);
+      combo.keys.push(this.KEY_NAMES.E3);
+      combo.action = this._onCombo1;
+      this.combos.push(combo);
+      combo = {};
+      combo.keys = [];
+      combo.keys.push(this.KEY_NAMES.E4);
+      combo.keys.push(this.KEY_NAMES.E3);
+      combo.keys.push(this.KEY_NAMES.E2);
+      combo.action = this._onCombo2;
+      this.combos.push(combo);
     }
 
     Game.prototype.update = function() {
@@ -2142,6 +2183,81 @@
 
     Game.prototype.onMouseWheel = function(delta) {};
 
+    Game.prototype._onEnergyComboButtonDown = function(combo_button) {
+      var combo, end_time, i, same, time, _i, _j, _len, _ref, _ref1, _results;
+
+      if (__indexOf.call(this.pressed_combo.keys, combo_button) >= 0) {
+        return;
+      }
+      if (this.pressed_combo.keys.length === 0) {
+        this.pressed_combo.start_time = (new Date()).getTime();
+      }
+      this.pressed_combo.keys.push(combo_button);
+      console.log(this.pressed_combo.keys);
+      _ref = this.combos;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        combo = _ref[_i];
+        if (combo.keys.length === this.pressed_combo.keys.length) {
+          same = true;
+          for (i = _j = 0, _ref1 = combo.keys.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
+            if (combo.keys[i] !== this.pressed_combo.keys[i]) {
+              same = false;
+              break;
+            }
+          }
+          if (same) {
+            end_time = (new Date()).getTime();
+            time = end_time - this.pressed_combo.start_time;
+            combo.action(time);
+            break;
+          } else {
+            _results.push(void 0);
+          }
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Game.prototype._onEnergyComboButtonUp = function(combo_button) {
+      this.pressed_combo.keys = this.pressed_combo.keys.filter(function(b) {
+        return b !== combo_button;
+      });
+      return console.log(this.pressed_combo.keys);
+    };
+
+    Game.prototype._onPhysicalComboButtonDown = function(combo_button) {
+      var s;
+
+      s = "";
+      switch (combo_button) {
+        case this.KEY_NAMES.P_LEFT:
+          s = "left";
+          break;
+        case this.KEY_NAMES.P_UP:
+          s = "up";
+          break;
+        case this.KEY_NAMES.P_RIGHT:
+          s = "right";
+          break;
+        case this.KEY_NAMES.P_DOWN:
+          s = "down";
+      }
+      return console.log("physical attack " + s);
+    };
+
+    Game.prototype._onPhysicalComboButtonUp = function(combo_button) {};
+
+    Game.prototype._onCombo1 = function(time) {
+      return console.log("executed combo1 in " + time + " ms");
+    };
+
+    Game.prototype._onCombo2 = function(time) {
+      return console.log("executed combo2 in " + time + " ms");
+    };
+
     Game.prototype._initKeyBindings = function() {
       var _this = this;
 
@@ -2184,6 +2300,46 @@
         return _this._controlled_char.startBlock();
       }, function() {
         return _this._controlled_char.endBlock();
+      });
+      this.keys.p_left = this.key_bindings.bind(settings.BINDINGS.P_LEFT, function() {
+        return _this._onPhysicalComboButtonDown(_this.KEY_NAMES.P_LEFT);
+      }, function() {
+        return _this._onPhysicalComboButtonUp(_this.KEY_NAMES.P_LEFT);
+      });
+      this.keys.p_up = this.key_bindings.bind(settings.BINDINGS.P_UP, function() {
+        return _this._onPhysicalComboButtonDown(_this.KEY_NAMES.P_UP);
+      }, function() {
+        return _this._onPhysicalComboButtonUp(_this.KEY_NAMES.P_UP);
+      });
+      this.keys.p_right = this.key_bindings.bind(settings.BINDINGS.P_RIGHT, function() {
+        return _this._onPhysicalComboButtonDown(_this.KEY_NAMES.P_RIGHT);
+      }, function() {
+        return _this._onPhysicalComboButtonUp(_this.KEY_NAMES.P_RIGHT);
+      });
+      this.keys.p_down = this.key_bindings.bind(settings.BINDINGS.P_DOWN, function() {
+        return _this._onPhysicalComboButtonDown(_this.KEY_NAMES.P_DOWN);
+      }, function() {
+        return _this._onPhysicalComboButtonUp(_this.KEY_NAMES.P_DOWN);
+      });
+      this.keys.e1 = this.key_bindings.bind(settings.BINDINGS.E1, function() {
+        return _this._onEnergyComboButtonDown(_this.KEY_NAMES.E1);
+      }, function() {
+        return _this._onEnergyComboButtonUp(_this.KEY_NAMES.E1);
+      });
+      this.keys.e2 = this.key_bindings.bind(settings.BINDINGS.E2, function() {
+        return _this._onEnergyComboButtonDown(_this.KEY_NAMES.E2);
+      }, function() {
+        return _this._onEnergyComboButtonUp(_this.KEY_NAMES.E2);
+      });
+      this.keys.e3 = this.key_bindings.bind(settings.BINDINGS.E3, function() {
+        return _this._onEnergyComboButtonDown(_this.KEY_NAMES.E3);
+      }, function() {
+        return _this._onEnergyComboButtonUp(_this.KEY_NAMES.E3);
+      });
+      this.keys.e4 = this.key_bindings.bind(settings.BINDINGS.E4, function() {
+        return _this._onEnergyComboButtonDown(_this.KEY_NAMES.E4);
+      }, function() {
+        return _this._onEnergyComboButtonUp(_this.KEY_NAMES.E4);
       });
       return this.key_bindings.layout = Bindings.COLEMAK;
     };
