@@ -24,6 +24,8 @@ settings = {
   COLLISION_GROUP:
     CHARACTER: -1
 
+  PHYSICAL_COMBO_MIN_TIME: 150
+
   BINDINGS:
     LEFT:  65 # A
     RIGHT: 68 # D

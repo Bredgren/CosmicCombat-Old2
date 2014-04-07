@@ -29,6 +29,7 @@
     COLLISION_GROUP: {
       CHARACTER: -1
     },
+    PHYSICAL_COMBO_MIN_TIME: 150,
     BINDINGS: {
       LEFT: 65,
       RIGHT: 68,
@@ -1980,11 +1981,20 @@
 
     Game.prototype._dev_gui = null;
 
-    Game.prototype.combos = [];
+    Game.prototype.energy_combos = [];
 
-    Game.prototype.pressed_combo = {
+    Game.prototype.energy_combo_key = 0;
+
+    Game.prototype.pressed_energy_combo = {
       keys: [],
       start_time: 0
+    };
+
+    Game.prototype.physical_combos = [];
+
+    Game.prototype.pressed_physical_combo = {
+      directions: [],
+      last_time: 0
     };
 
     Game.prototype.KEY_NAMES = {
@@ -2044,15 +2054,29 @@
       combo.keys.push(this.KEY_NAMES.E2);
       combo.keys.push(this.KEY_NAMES.E1);
       combo.keys.push(this.KEY_NAMES.E3);
-      combo.action = this._onCombo1;
-      this.combos.push(combo);
+      combo.action = this._onEnergyCombo1;
+      this.energy_combos.push(combo);
       combo = {};
       combo.keys = [];
       combo.keys.push(this.KEY_NAMES.E4);
       combo.keys.push(this.KEY_NAMES.E3);
       combo.keys.push(this.KEY_NAMES.E2);
-      combo.action = this._onCombo2;
-      this.combos.push(combo);
+      combo.action = this._onEnergyCombo2;
+      this.energy_combos.push(combo);
+      combo = {};
+      combo.keys = [];
+      combo.keys.push(this.KEY_NAMES.P_LEFT);
+      combo.keys.push(this.KEY_NAMES.P_LEFT);
+      combo.keys.push(this.KEY_NAMES.P_UP);
+      combo.action = this._onPhysicalCombo1;
+      this.physical_combos.push(combo);
+      combo = {};
+      combo.keys = [];
+      combo.keys.push(this.KEY_NAMES.P_DOWN);
+      combo.keys.push(this.KEY_NAMES.P_RIGHT);
+      combo.keys.push(this.KEY_NAMES.P_UP);
+      combo.action = this._onPhysicalCombo2;
+      this.physical_combos.push(combo);
     }
 
     Game.prototype.update = function() {
@@ -2186,29 +2210,30 @@
     Game.prototype._onEnergyComboButtonDown = function(combo_button) {
       var combo, end_time, i, same, time, _i, _j, _len, _ref, _ref1, _results;
 
-      if (__indexOf.call(this.pressed_combo.keys, combo_button) >= 0) {
+      if (__indexOf.call(this.pressed_energy_combo.keys, combo_button) >= 0) {
         return;
       }
-      if (this.pressed_combo.keys.length === 0) {
-        this.pressed_combo.start_time = (new Date()).getTime();
+      if (this.pressed_energy_combo.keys.length === 0) {
+        this.pressed_energy_combo.start_time = (new Date()).getTime();
       }
-      this.pressed_combo.keys.push(combo_button);
-      console.log(this.pressed_combo.keys);
-      _ref = this.combos;
+      this.pressed_energy_combo.keys.push(combo_button);
+      console.log(this.pressed_energy_combo.keys);
+      _ref = this.energy_combos;
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         combo = _ref[_i];
-        if (combo.keys.length === this.pressed_combo.keys.length) {
+        if (combo.keys.length === this.pressed_energy_combo.keys.length) {
           same = true;
           for (i = _j = 0, _ref1 = combo.keys.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-            if (combo.keys[i] !== this.pressed_combo.keys[i]) {
+            if (combo.keys[i] !== this.pressed_energy_combo.keys[i]) {
               same = false;
               break;
             }
           }
           if (same) {
             end_time = (new Date()).getTime();
-            time = end_time - this.pressed_combo.start_time;
+            time = end_time - this.pressed_energy_combo.start_time;
+            this.energy_combo_key = combo.keys[combo.keys.length - 1];
             combo.action(time);
             break;
           } else {
@@ -2222,40 +2247,91 @@
     };
 
     Game.prototype._onEnergyComboButtonUp = function(combo_button) {
-      this.pressed_combo.keys = this.pressed_combo.keys.filter(function(b) {
+      var keys;
+
+      this.pressed_energy_combo.keys = this.pressed_energy_combo.keys.filter(function(b) {
         return b !== combo_button;
       });
-      return console.log(this.pressed_combo.keys);
+      console.log(this.pressed_energy_combo.keys);
+      keys = this.pressed_energy_combo.keys;
+      if (keys.length === 1 && keys[0] === this.energy_combo_key) {
+        return console.log("Energy attack released");
+      } else if (keys.length === 0) {
+        console.log("Energy attack stopped");
+        return this.energy_combo_key = 0;
+      }
     };
 
     Game.prototype._onPhysicalComboButtonDown = function(combo_button) {
-      var s;
+      var combo, cur_time, d, i, prev_time, s, same, _i, _j, _k, _len, _len1, _ref, _ref1, _ref2, _results;
 
-      s = "";
-      switch (combo_button) {
-        case this.KEY_NAMES.P_LEFT:
-          s = "left";
-          break;
-        case this.KEY_NAMES.P_UP:
-          s = "up";
-          break;
-        case this.KEY_NAMES.P_RIGHT:
-          s = "right";
-          break;
-        case this.KEY_NAMES.P_DOWN:
-          s = "down";
+      prev_time = this.pressed_physical_combo.last_time;
+      cur_time = (new Date()).getTime();
+      if (cur_time - prev_time > settings.PHYSICAL_COMBO_MIN_TIME) {
+        this.pressed_physical_combo.directions = [];
       }
-      return console.log("physical attack " + s);
+      this.pressed_physical_combo.directions.push(combo_button);
+      this.pressed_physical_combo.last_time = cur_time;
+      s = "";
+      _ref = this.pressed_physical_combo.directions;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        d = _ref[_i];
+        switch (d) {
+          case this.KEY_NAMES.P_LEFT:
+            s += "left ";
+            break;
+          case this.KEY_NAMES.P_UP:
+            s += "up ";
+            break;
+          case this.KEY_NAMES.P_RIGHT:
+            s += "right ";
+            break;
+          case this.KEY_NAMES.P_DOWN:
+            s += "down ";
+        }
+      }
+      console.log("physical attack: " + s);
+      _ref1 = this.physical_combos;
+      _results = [];
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        combo = _ref1[_j];
+        if (combo.keys.length === this.pressed_physical_combo.directions.length) {
+          same = true;
+          for (i = _k = 0, _ref2 = combo.keys.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; i = 0 <= _ref2 ? ++_k : --_k) {
+            if (combo.keys[i] !== this.pressed_physical_combo.directions[i]) {
+              same = false;
+              break;
+            }
+          }
+          if (same) {
+            combo.action();
+            break;
+          } else {
+            _results.push(void 0);
+          }
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
     };
 
     Game.prototype._onPhysicalComboButtonUp = function(combo_button) {};
 
-    Game.prototype._onCombo1 = function(time) {
-      return console.log("executed combo1 in " + time + " ms");
+    Game.prototype._onPhysicalCombo1 = function() {
+      return console.log("Executed physical combo1");
     };
 
-    Game.prototype._onCombo2 = function(time) {
-      return console.log("executed combo2 in " + time + " ms");
+    Game.prototype._onPhysicalCombo2 = function() {
+      return console.log("Executed physical combo2");
+    };
+
+    Game.prototype._onEnergyCombo1 = function(time) {
+      return console.log("Charging energy combo1 (" + time + " ms)");
+    };
+
+    Game.prototype._onEnergyCombo2 = function(time) {
+      return console.log("Charging energy combo2 (" + time + " ms)");
     };
 
     Game.prototype._initKeyBindings = function() {

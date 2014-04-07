@@ -34,10 +34,15 @@ class Game
 
   _dev_gui: null
 
-  combos: []
-  pressed_combo:
+  energy_combos: []
+  energy_combo_key: 0
+  pressed_energy_combo:
     keys: []
     start_time: 0
+  physical_combos: []
+  pressed_physical_combo:
+    directions: []
+    last_time: 0
 
   KEY_NAMES:
     P_LEFT: 0
@@ -98,16 +103,32 @@ class Game
     combo.keys.push(@KEY_NAMES.E2)
     combo.keys.push(@KEY_NAMES.E1)
     combo.keys.push(@KEY_NAMES.E3)
-    combo.action = @_onCombo1
-    @combos.push(combo)
+    combo.action = @_onEnergyCombo1
+    @energy_combos.push(combo)
 
     combo = {}
     combo.keys = []
     combo.keys.push(@KEY_NAMES.E4)
     combo.keys.push(@KEY_NAMES.E3)
     combo.keys.push(@KEY_NAMES.E2)
-    combo.action = @_onCombo2
-    @combos.push(combo)
+    combo.action = @_onEnergyCombo2
+    @energy_combos.push(combo)
+
+    combo = {}
+    combo.keys = []
+    combo.keys.push(@KEY_NAMES.P_LEFT)
+    combo.keys.push(@KEY_NAMES.P_LEFT)
+    combo.keys.push(@KEY_NAMES.P_UP)
+    combo.action = @_onPhysicalCombo1
+    @physical_combos.push(combo)
+
+    combo = {}
+    combo.keys = []
+    combo.keys.push(@KEY_NAMES.P_DOWN)
+    combo.keys.push(@KEY_NAMES.P_RIGHT)
+    combo.keys.push(@KEY_NAMES.P_UP)
+    combo.action = @_onPhysicalCombo2
+    @physical_combos.push(combo)
 
   update: () ->
     if not @paused
@@ -219,49 +240,81 @@ class Game
   onMouseWheel: (delta) ->
 
   _onEnergyComboButtonDown: (combo_button) ->
-    if combo_button in @pressed_combo.keys then return
-    if @pressed_combo.keys.length is 0
-      @pressed_combo.start_time = (new Date()).getTime()
-    @pressed_combo.keys.push(combo_button)
-    console.log(@pressed_combo.keys)
-    for combo in @combos
-      if combo.keys.length is @pressed_combo.keys.length
+    if combo_button in @pressed_energy_combo.keys then return
+    if @pressed_energy_combo.keys.length is 0
+      @pressed_energy_combo.start_time = (new Date()).getTime()
+    @pressed_energy_combo.keys.push(combo_button)
+    console.log(@pressed_energy_combo.keys)
+    for combo in @energy_combos
+      if combo.keys.length is @pressed_energy_combo.keys.length
         same = true
         for i in [0...combo.keys.length]
-          if combo.keys[i] isnt @pressed_combo.keys[i]
+          if combo.keys[i] isnt @pressed_energy_combo.keys[i]
             same = false
             break
         if same
           end_time = (new Date()).getTime()
-          time = end_time - @pressed_combo.start_time
+          time = end_time - @pressed_energy_combo.start_time
+          @energy_combo_key = combo.keys[combo.keys.length - 1]
           combo.action(time)
           break
 
   _onEnergyComboButtonUp: (combo_button) ->
-    @pressed_combo.keys = @pressed_combo.keys.filter((b) -> b isnt combo_button)
-    console.log(@pressed_combo.keys)
+    @pressed_energy_combo.keys = @pressed_energy_combo.keys.filter(
+      (b) -> b isnt combo_button)
+    console.log(@pressed_energy_combo.keys)
+    keys = @pressed_energy_combo.keys
+    if keys.length is 1 and keys[0] is @energy_combo_key
+      console.log("Energy attack released")
+    else if keys.length is 0
+      console.log("Energy attack stopped")
+      @energy_combo_key = 0
 
   _onPhysicalComboButtonDown: (combo_button) ->
-    s = ""
-    switch combo_button
-      when @KEY_NAMES.P_LEFT
-        s = "left"
-      when @KEY_NAMES.P_UP
-        s = "up"
-      when @KEY_NAMES.P_RIGHT
-        s = "right"
-      when @KEY_NAMES.P_DOWN
-        s = "down"
+    prev_time = @pressed_physical_combo.last_time
+    cur_time = (new Date()).getTime()
+    if cur_time - prev_time > settings.PHYSICAL_COMBO_MIN_TIME
+      @pressed_physical_combo.directions = []
+    @pressed_physical_combo.directions.push(combo_button)
+    @pressed_physical_combo.last_time = cur_time
 
-    console.log("physical attack #{s}")
+    s = ""
+    for d in @pressed_physical_combo.directions
+      switch d
+        when @KEY_NAMES.P_LEFT
+          s += "left "
+        when @KEY_NAMES.P_UP
+          s += "up "
+        when @KEY_NAMES.P_RIGHT
+          s += "right "
+        when @KEY_NAMES.P_DOWN
+          s += "down "
+    console.log("physical attack: #{s}")
+
+    for combo in @physical_combos
+      if combo.keys.length is @pressed_physical_combo.directions.length
+        same = true
+        for i in [0...combo.keys.length]
+          if combo.keys[i] isnt @pressed_physical_combo.directions[i]
+            same = false
+            break
+        if same
+          combo.action()
+          break
 
   _onPhysicalComboButtonUp: (combo_button) ->
 
-  _onCombo1: (time) ->
-    console.log("executed combo1 in #{time} ms")
+  _onPhysicalCombo1: () ->
+    console.log("Executed physical combo1")
 
-  _onCombo2: (time) ->
-    console.log("executed combo2 in #{time} ms")
+  _onPhysicalCombo2: () ->
+    console.log("Executed physical combo2")
+
+  _onEnergyCombo1: (time) ->
+    console.log("Charging energy combo1 (#{time} ms)")
+
+  _onEnergyCombo2: (time) ->
+    console.log("Charging energy combo2 (#{time} ms)")
 
   _initKeyBindings: () ->
     @keys.left = @key_bindings.bind(settings.BINDINGS.LEFT,
