@@ -4,6 +4,7 @@
 class Jackie extends BaseCharacter
   recover_rate: 0.0003
   improve_rate: 0.05
+
   constructor: (universe, init_pos, click_callback) ->
     super(universe, init_pos, click_callback)
     @stand = PIXI.Sprite.fromFrame("jackie_stand_01")
@@ -19,6 +20,10 @@ class Jackie extends BaseCharacter
     @_h = .5
     @_offset = .1
     @_createBody(init_pos)
+
+    # Why is attacks shared unless I initialize it here?
+    @attacks = []
+    @attacks.push(new EnergyAttack1(@))
 
   update: () ->
     super()

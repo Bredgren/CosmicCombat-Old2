@@ -2,10 +2,12 @@
 #_require ../../global
 #_require ../../config
 #_require ../energy/energy
+#_require ../attacks/energy_attack_1
 
 class BaseCharacter
   body: null
   energy: null
+  attacks: null
 
   # stats
   recover_rate: 0.0002  # percent of max

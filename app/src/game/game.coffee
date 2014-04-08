@@ -4,6 +4,7 @@
 #_require ./camera
 #_require ./character/characters
 #_require ./dev_gui
+#_require ./attacks/energy_attack
 #_require ./starfield
 #_require ./universe
 
@@ -34,11 +35,11 @@ class Game
 
   _dev_gui: null
 
-  energy_combos: []
   energy_combo_key: 0
   pressed_energy_combo:
     keys: []
     start_time: 0
+    attack: null
   physical_combos: []
   pressed_physical_combo:
     directions: []
@@ -49,10 +50,6 @@ class Game
     P_UP: 1
     P_RIGHT: 2
     P_DOWN: 3
-    E1: 4
-    E2: 5
-    E3: 6
-    E4: 7
 
   constructor: (@stage) ->
     @hud_stage = new PIXI.DisplayObjectContainer()
@@ -98,21 +95,21 @@ class Game
     @key_bindings = new Bindings()
     @_initKeyBindings()
 
-    combo = {}
-    combo.keys = []
-    combo.keys.push(@KEY_NAMES.E2)
-    combo.keys.push(@KEY_NAMES.E1)
-    combo.keys.push(@KEY_NAMES.E3)
-    combo.action = @_onEnergyCombo1
-    @energy_combos.push(combo)
+    # combo = {}
+    # combo.keys = []
+    # combo.keys.push(@KEY_NAMES.E2)
+    # combo.keys.push(@KEY_NAMES.E1)
+    # combo.keys.push(@KEY_NAMES.E3)
+    # combo.action = @_onEnergyCombo1
+    # @energy_combos.push(combo)
 
-    combo = {}
-    combo.keys = []
-    combo.keys.push(@KEY_NAMES.E4)
-    combo.keys.push(@KEY_NAMES.E3)
-    combo.keys.push(@KEY_NAMES.E2)
-    combo.action = @_onEnergyCombo2
-    @energy_combos.push(combo)
+    # combo = {}
+    # combo.keys = []
+    # combo.keys.push(@KEY_NAMES.E4)
+    # combo.keys.push(@KEY_NAMES.E3)
+    # combo.keys.push(@KEY_NAMES.E2)
+    # combo.action = @_onEnergyCombo2
+    # @energy_combos.push(combo)
 
     combo = {}
     combo.keys = []
@@ -245,7 +242,8 @@ class Game
       @pressed_energy_combo.start_time = (new Date()).getTime()
     @pressed_energy_combo.keys.push(combo_button)
     console.log(@pressed_energy_combo.keys)
-    for combo in @energy_combos
+    for attack in @_controlled_char.attacks
+      combo = attack.combo()
       if combo.keys.length is @pressed_energy_combo.keys.length
         same = true
         for i in [0...combo.keys.length]
@@ -256,7 +254,8 @@ class Game
           end_time = (new Date()).getTime()
           time = end_time - @pressed_energy_combo.start_time
           @energy_combo_key = combo.keys[combo.keys.length - 1]
-          combo.action(time)
+          @pressed_energy_combo.attack = attack
+          attack.charge(time)
           break
 
   _onEnergyComboButtonUp: (combo_button) ->
@@ -265,10 +264,12 @@ class Game
     console.log(@pressed_energy_combo.keys)
     keys = @pressed_energy_combo.keys
     if keys.length is 1 and keys[0] is @energy_combo_key
-      console.log("Energy attack released")
+      @pressed_energy_combo.attack.release()
     else if keys.length is 0
-      console.log("Energy attack stopped")
+      if @pressed_energy_combo.attack
+        @pressed_energy_combo.attack.stop()
       @energy_combo_key = 0
+      @pressed_energy_combo.attack = null
 
   _onPhysicalComboButtonDown: (combo_button) ->
     prev_time = @pressed_physical_combo.last_time
@@ -366,20 +367,20 @@ class Game
       () => @_onPhysicalComboButtonUp(@KEY_NAMES.P_DOWN))
 
     @keys.e1 = @key_bindings.bind(settings.BINDINGS.E1,
-      () => @_onEnergyComboButtonDown(@KEY_NAMES.E1),
-      () => @_onEnergyComboButtonUp(@KEY_NAMES.E1))
+      () => @_onEnergyComboButtonDown(EnergyAttack.KEY_NAMES.E1),
+      () => @_onEnergyComboButtonUp(EnergyAttack.KEY_NAMES.E1))
 
     @keys.e2 = @key_bindings.bind(settings.BINDINGS.E2,
-      () => @_onEnergyComboButtonDown(@KEY_NAMES.E2),
-      () => @_onEnergyComboButtonUp(@KEY_NAMES.E2))
+      () => @_onEnergyComboButtonDown(EnergyAttack.KEY_NAMES.E2),
+      () => @_onEnergyComboButtonUp(EnergyAttack.KEY_NAMES.E2))
 
     @keys.e3 = @key_bindings.bind(settings.BINDINGS.E3,
-      () => @_onEnergyComboButtonDown(@KEY_NAMES.E3),
-      () => @_onEnergyComboButtonUp(@KEY_NAMES.E3))
+      () => @_onEnergyComboButtonDown(EnergyAttack.KEY_NAMES.E3),
+      () => @_onEnergyComboButtonUp(EnergyAttack.KEY_NAMES.E3))
 
     @keys.e4 = @key_bindings.bind(settings.BINDINGS.E4,
-      () => @_onEnergyComboButtonDown(@KEY_NAMES.E4),
-      () => @_onEnergyComboButtonUp(@KEY_NAMES.E4))
+      () => @_onEnergyComboButtonDown(EnergyAttack.KEY_NAMES.E4),
+      () => @_onEnergyComboButtonUp(EnergyAttack.KEY_NAMES.E4))
 
     # Bindings are set in US layout so set to user's preference after
     @key_bindings.layout = Bindings.COLEMAK
