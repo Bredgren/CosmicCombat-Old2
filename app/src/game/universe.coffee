@@ -157,3 +157,9 @@ class Universe
     character = Characters.newCharacter(@, pos, type, callback)
     @characters.push(character)
     return character
+
+  addTerrain: (x, y, size, prec) ->
+    @current_planet.addTerrain(x, y, size, prec)
+
+  removeTerrain: (x, y, size, prec) ->
+    @current_planet.removeTerrain(x, y, size, prec)

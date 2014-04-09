@@ -4,6 +4,9 @@
 class DevGui
   enabled: false
 
+  MOUSE_LEFT: 0
+  MOUSE_RIGHT: 2
+
   text: null  # PIXI text object for the "Dev-Mode" text
   new_text: null  # PIXI text object for new character
   select_text: null  # PIXI text object to show seleted character
@@ -29,6 +32,11 @@ class DevGui
   selected_char: null  # the currently selected character
   sel_update_fn: null
   con_update_fn: null
+  left_mouse: ''
+  right_mouse: ''
+  mouse_actions: ["none", "new character", "add terrain", "remove terrain"]
+  terrain_brush_size: 1
+  terrain_brush_prec: 10
 
   constructor: (@game) ->
     style = {font: "15px Arial", fill: "#FFFFFF"}
@@ -50,6 +58,10 @@ class DevGui
     @root_folder.add(@, 'toggleDevMode')
     @_createMouseCoordsFolder()
     @_createGameFolder()
+    @root_folder.add(@, 'left_mouse', @mouse_actions)
+    @root_folder.add(@, 'right_mouse', @mouse_actions)
+    @_createNewCharFolder()
+    @_createTerrainBrushFolder()
     @_createCharacterFolder()
 
   remove: () ->
@@ -138,16 +150,21 @@ class DevGui
     f.add(@game, "paused")
     f.add(@game, "camera_attached")
 
+  _createTerrainBrushFolder: () ->
+    f = @root_folder.addFolder("Terrain Brush Settings")
+    f.add(@, 'terrain_brush_size')
+    f.add(@, 'terrain_brush_prec')
+    # f.add(@, 'terrain_brush_shape', @brush_shapes)
+
   _createCharacterFolder: () ->
     @char_folder = @root_folder.addFolder("Characters")
-    @_createNewCharFolder()
     @_createSelCharFolder()
     @_createConCharFolder()
 
   _createNewCharFolder: () ->
-    f = @char_folder.addFolder("New Character")
-    a = f.add(@, 'new_char')
-    a.onChange(@_onChangeNewChar)
+    f = @root_folder.addFolder("New Character Settings")
+    # a = f.add(@, 'new_char')
+    # a.onChange(@_onChangeNewChar)
     f.add(@new_char_options, 'type', Characters.TYPES)
 
   _createSelCharFolder: () ->
@@ -270,9 +287,22 @@ class DevGui
     if @enabled
       @_selectCharacter(character)
 
-  onMouseDown: (screen_pos) ->
-    if @new_char
-      @game.spawnCharacter(@new_char_options)
+  onMouseDown: (button, screen_pos) ->
+    m = null
+    if button is @MOUSE_LEFT
+      m = @left_mouse
+    else if button is @MOUSE_RIGHT
+      m = @right_mouse
+
+    switch m
+      when "new character"
+        @game.spawnCharacter(@new_char_options)
+      when "add terrain"
+        @game.universe.addTerrain(@world_x, @world_y,
+          @terrain_brush_size, @terrain_brush_prec)
+      when "remove terrain"
+        @game.universe.removeTerrain(@world_x, @world_y,
+          @terrain_brush_size, @terrain_brush_prec)
 
   onMouseMove: (screen_pos) ->
     w = @game.camera.screenToWorld(screen_pos)

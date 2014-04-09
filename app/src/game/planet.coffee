@@ -96,6 +96,48 @@ class Planet
     @universe.game.bg_stage.removeChild(@_terrain_sprite)
     @universe.game.bg_stage.removeChild(@_terrain_mask)
 
+  addTerrain: (x, y, size, precision) ->
+    console.log('a')
+
+  removeTerrain: (x, y, size, precision) ->
+    c = createCircle(precision, {x: x, y: y}, size)
+
+    terrain = (toCapitalCoords(t) for t in @terrain)
+    ClipperLib.JS.ScaleUpPaths(terrain, 100)
+    ClipperLib.JS.ScaleUpPaths(c, 100)
+
+    cpr = new ClipperLib.Clipper()
+    cpr.AddPaths(terrain, ClipperLib.PolyType.ptSubject, true)
+    cpr.AddPaths(c, ClipperLib.PolyType.ptClip, true)
+
+    solution = []
+    type = ClipperLib.ClipType.ctDifference
+    fill_type = ClipperLib.PolyFillType.pftNonZero
+
+    cpr.Execute(type, solution, fill_type, fill_type)
+
+    solution = ClipperLib.JS.Clean(solution, .1 * 100)
+
+    ClipperLib.JS.ScaleDownPaths(solution, 100)
+    # ClipperLib.JS.ScaleDownPaths(c, 100)
+
+    result = []
+    for poly in solution
+      r = []
+      for v in poly
+        r.push({x: v.X, y: v.Y})
+      swctx = new poly2tri.SweepContext(r)
+      swctx.triangulate()
+      triangles = swctx.getTriangles()
+      triangles.forEach((t) ->
+        tri = []
+        t.getPoints().forEach((p) ->
+          tri.push({x: p.x, y: p.y}))
+        result.push(tri))
+
+    @terrain = result
+    @_updateTerrainBody()
+
   _initTerrain: () ->
     w = @size / 2
     h = @depth / 2

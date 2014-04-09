@@ -214,9 +214,9 @@ class Game
     if @_controlled_char
       @key_bindings.onKeyUp(key_code)
 
-  onMouseDown: (screen_pos) ->
+  onMouseDown: (button, screen_pos) ->
     @_mouse_down = true
-    @_dev_gui.onMouseDown(screen_pos)
+    @_dev_gui.onMouseDown(button, screen_pos)
 
   onMouseUp: (screen_pos) ->
     @_mouse_down = false

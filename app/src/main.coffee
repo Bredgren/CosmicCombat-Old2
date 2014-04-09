@@ -246,11 +246,15 @@ main = ->
     y = e.layerY
     log_input("click:", x, y)
 
+  contextMenuHandler = (e) ->
+    log_input("context menu")
+    return false
+
   mouseDownHandler = (e) ->
     log_input("mouse down")
     x = e.layerX
     y = e.layerY
-    game.onMouseDown({x: x, y: y})
+    game.onMouseDown(e.button, {x: x, y: y})
 
   mouseUpHandler = (e) ->
     log_input("mouse up")
@@ -279,6 +283,7 @@ main = ->
   window.onbeforeunload = onBeforeUnload
   event_catcher.addEventListener('mousemove', mouseMoveHandler, false)
   event_catcher.addEventListener('click', clickHandler, false)
+  event_catcher.oncontextmenu = contextMenuHandler
   event_catcher.addEventListener('mousedown', mouseDownHandler, false)
   event_catcher.addEventListener('mouseup', mouseUpHandler, false)
   event_catcher.addEventListener('mouseout', mouseOutHandler, false)
