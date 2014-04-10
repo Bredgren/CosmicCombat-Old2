@@ -1459,8 +1459,8 @@
     circleArray = [];
     for (i = _i = 0; 0 <= precision ? _i < precision : _i > precision; i = 0 <= precision ? ++_i : --_i) {
       v = {
-        X: origin.x + radius * Math.cos(angle * i),
-        Y: origin.y + radius * Math.sin(angle * i)
+        x: origin.x + radius * Math.cos(angle * i),
+        y: origin.y + radius * Math.sin(angle * i)
       };
       circleArray.push(v);
     }
@@ -1749,30 +1749,57 @@
     };
 
     Planet.prototype.removeTerrain = function(x, y, size, precision) {
-      var c, cpr, fill_type, poly, r, result, solution, swctx, t, terrain, triangles, type, v, _i, _j, _len, _len1;
+      var c, new_p, p, poly, result, terrain_poly, _i, _j, _len, _len1, _ref;
 
       c = createCircle(precision, {
         x: x,
         y: y
       }, size);
-      terrain = (function() {
-        var _i, _len, _ref, _results;
+      result = [];
+      _ref = this.terrain;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        poly = _ref[_i];
+        terrain_poly = [];
+        terrain_poly.push(poly);
+        new_p = this._clipPoly(terrain_poly, c, ClipperLib.ClipType.ctDifference);
+        for (_j = 0, _len1 = new_p.length; _j < _len1; _j++) {
+          p = new_p[_j];
+          result.push(p);
+        }
+      }
+      this.terrain = result;
+      return this._updateTerrainBody();
+    };
 
-        _ref = this.terrain;
+    Planet.prototype._clipPoly = function(sub, cl, type) {
+      var c, clip, cpr, fill_type, poly, r, result, s, solution, subject, swctx, triangles, _i, _len;
+
+      subject = (function() {
+        var _i, _len, _results;
+
         _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          t = _ref[_i];
-          _results.push(toCapitalCoords(t));
+        for (_i = 0, _len = sub.length; _i < _len; _i++) {
+          s = sub[_i];
+          _results.push(toCapitalCoords(s));
         }
         return _results;
-      }).call(this);
-      ClipperLib.JS.ScaleUpPaths(terrain, 100);
-      ClipperLib.JS.ScaleUpPaths(c, 100);
+      })();
+      clip = (function() {
+        var _i, _len, _results;
+
+        _results = [];
+        for (_i = 0, _len = cl.length; _i < _len; _i++) {
+          c = cl[_i];
+          _results.push(toCapitalCoords(c));
+        }
+        return _results;
+      })();
+      ClipperLib.JS.ScaleUpPaths(subject, 100);
+      ClipperLib.JS.ScaleUpPaths(clip, 100);
       cpr = new ClipperLib.Clipper();
-      cpr.AddPaths(terrain, ClipperLib.PolyType.ptSubject, true);
-      cpr.AddPaths(c, ClipperLib.PolyType.ptClip, true);
+      cpr.AddPaths(subject, ClipperLib.PolyType.ptSubject, true);
+      cpr.AddPaths(clip, ClipperLib.PolyType.ptClip, true);
       solution = [];
-      type = ClipperLib.ClipType.ctDifference;
       fill_type = ClipperLib.PolyFillType.pftNonZero;
       cpr.Execute(type, solution, fill_type, fill_type);
       solution = ClipperLib.JS.Clean(solution, .1 * 100);
@@ -1780,14 +1807,7 @@
       result = [];
       for (_i = 0, _len = solution.length; _i < _len; _i++) {
         poly = solution[_i];
-        r = [];
-        for (_j = 0, _len1 = poly.length; _j < _len1; _j++) {
-          v = poly[_j];
-          r.push({
-            x: v.X,
-            y: v.Y
-          });
-        }
+        r = toLowerCoords(poly);
         swctx = new poly2tri.SweepContext(r);
         swctx.triangulate();
         triangles = swctx.getTriangles();
@@ -1804,45 +1824,53 @@
           return result.push(tri);
         });
       }
-      this.terrain = result;
-      return this._updateTerrainBody();
+      return result;
     };
 
     Planet.prototype._initTerrain = function() {
-      var container, cx, cy, edge_w, h, h_count, tex, tile, w, w_count, x, y, _i, _j;
+      var container, cx, cy, edge_w, end_x, end_y, grid_size, h, h_count, points, rect, row, tex, tile, w, w_count, x, y, _i, _j, _k, _l, _ref, _ref1;
 
-      w = this.size / 2;
-      h = this.depth / 2;
+      w = this.size;
+      h = this.depth;
       cx = 0;
-      cy = h;
-      this.terrain = [
-        [
-          {
-            x: cx - w,
-            y: cy - h
-          }, {
-            x: cx + w,
-            y: cy - h
-          }, {
-            x: cx + w,
-            y: cy + h
-          }, {
-            x: cx - w,
-            y: cy + h
+      cy = h / 2;
+      grid_size = 10;
+      points = [];
+      y = 0;
+      end_y = false;
+      while (!end_y && y <= h) {
+        row = [];
+        x = 0;
+        end_x = false;
+        while (!end_x && x <= w) {
+          row.push({
+            x: cx - (w / 2) + x,
+            y: cy - (h / 2) + y
+          });
+          if (x === w && !end_x) {
+            end_x = true;
           }
-        ], [
-          {
-            x: cx,
-            y: cy - h
-          }, {
-            x: cx + 4,
-            y: cy - 2 - h
-          }, {
-            x: cx + 4,
-            y: cy - h
+          x += grid_size;
+          if (x > w && !end_x) {
+            x = w;
           }
-        ]
-      ];
+        }
+        points.push(row);
+        if (y === h && !end_y) {
+          end_y = true;
+        }
+        y += grid_size;
+        if (y > h && !end_y) {
+          y = h;
+        }
+      }
+      this.terrain = [];
+      for (y = _i = 0, _ref = points.length - 1; 0 <= _ref ? _i < _ref : _i > _ref; y = 0 <= _ref ? ++_i : --_i) {
+        for (x = _j = 0, _ref1 = points[0].length - 1; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; x = 0 <= _ref1 ? ++_j : --_j) {
+          rect = [points[y][x], points[y][x + 1], points[y + 1][x + 1], points[y + 1][x]];
+          this.terrain.push(rect);
+        }
+      }
       edge_w = Math.ceil(settings.WIDTH / settings.TILE_SIZE);
       w = (this.size * settings.PPM) + (edge_w * settings.TILE_SIZE);
       h = (this.depth + this.MAX_TERRAIN_HEIGHT) * settings.PPM;
@@ -1850,8 +1878,8 @@
       container = new PIXI.DisplayObjectContainer();
       w_count = w / settings.TILE_SIZE;
       h_count = h / settings.TILE_SIZE;
-      for (x = _i = 0; 0 <= w_count ? _i < w_count : _i > w_count; x = 0 <= w_count ? ++_i : --_i) {
-        for (y = _j = 0; 0 <= h_count ? _j < h_count : _j > h_count; y = 0 <= h_count ? ++_j : --_j) {
+      for (x = _k = 0; 0 <= w_count ? _k < w_count : _k > w_count; x = 0 <= w_count ? ++_k : --_k) {
+        for (y = _l = 0; 0 <= h_count ? _l < h_count : _l > h_count; y = 0 <= h_count ? ++_l : --_l) {
           tile = PIXI.Sprite.fromFrame("terrain_1");
           tile.position.x = x * settings.TILE_SIZE;
           tile.position.y = y * settings.TILE_SIZE;

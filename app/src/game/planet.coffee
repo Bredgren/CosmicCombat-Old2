@@ -101,17 +101,29 @@ class Planet
 
   removeTerrain: (x, y, size, precision) ->
     c = createCircle(precision, {x: x, y: y}, size)
+    result = []
+    for poly in @terrain
+      terrain_poly = []
+      terrain_poly.push(poly)
+      new_p = @_clipPoly(terrain_poly, c, ClipperLib.ClipType.ctDifference)
+      for p in new_p
+        result.push(p)
 
-    terrain = (toCapitalCoords(t) for t in @terrain)
-    ClipperLib.JS.ScaleUpPaths(terrain, 100)
-    ClipperLib.JS.ScaleUpPaths(c, 100)
+    @terrain = result
+    @_updateTerrainBody()
+
+  _clipPoly: (sub, cl, type) ->
+    subject = (toCapitalCoords(s) for s in sub)
+    clip = (toCapitalCoords(c) for c in cl)
+
+    ClipperLib.JS.ScaleUpPaths(subject, 100)
+    ClipperLib.JS.ScaleUpPaths(clip, 100)
 
     cpr = new ClipperLib.Clipper()
-    cpr.AddPaths(terrain, ClipperLib.PolyType.ptSubject, true)
-    cpr.AddPaths(c, ClipperLib.PolyType.ptClip, true)
+    cpr.AddPaths(subject, ClipperLib.PolyType.ptSubject, true)
+    cpr.AddPaths(clip, ClipperLib.PolyType.ptClip, true)
 
     solution = []
-    type = ClipperLib.ClipType.ctDifference
     fill_type = ClipperLib.PolyFillType.pftNonZero
 
     cpr.Execute(type, solution, fill_type, fill_type)
@@ -119,13 +131,10 @@ class Planet
     solution = ClipperLib.JS.Clean(solution, .1 * 100)
 
     ClipperLib.JS.ScaleDownPaths(solution, 100)
-    # ClipperLib.JS.ScaleDownPaths(c, 100)
 
     result = []
     for poly in solution
-      r = []
-      for v in poly
-        r.push({x: v.X, y: v.Y})
+      r = toLowerCoords(poly)
       swctx = new poly2tri.SweepContext(r)
       swctx.triangulate()
       triangles = swctx.getTriangles()
@@ -135,18 +144,41 @@ class Planet
           tri.push({x: p.x, y: p.y}))
         result.push(tri))
 
-    @terrain = result
-    @_updateTerrainBody()
+    return result
 
   _initTerrain: () ->
-    w = @size / 2
-    h = @depth / 2
+    w = @size
+    h = @depth
     cx = 0
-    cy = h
-    @terrain = [[{x: cx - w, y: cy - h}, {x: cx + w, y: cy - h},
-                 {x: cx + w, y: cy + h}, {x: cx - w, y: cy + h}],
-                [{x: cx, y: cy - h}, {x: cx + 4, y: cy - 2 - h},
-                 {x: cx + 4, y: cy - h}]]
+    cy = h / 2
+    grid_size = 10
+    points = []
+    y = 0
+    end_y = false
+    while not end_y and y <= h
+      row = []
+      x = 0
+      end_x = false
+      while not end_x and x <= w
+        row.push({x: cx - (w / 2) + x, y: cy - (h / 2) + y})
+        if x is w and not end_x
+          end_x = true
+        x += grid_size
+        if x > w and not end_x
+          x = w
+      points.push(row)
+      if y is h and not end_y
+        end_y = true
+      y += grid_size
+      if y > h and not end_y
+        y = h
+
+    @terrain = []
+    for y in [0...points.length - 1]
+      for x in [0...points[0].length - 1]
+        rect = [points[y][x], points[y][x + 1],
+                points[y + 1][x + 1], points[y + 1][x]]
+        @terrain.push(rect)
 
     edge_w = Math.ceil(settings.WIDTH / settings.TILE_SIZE)
     w = (@size * settings.PPM) + (edge_w * settings.TILE_SIZE)

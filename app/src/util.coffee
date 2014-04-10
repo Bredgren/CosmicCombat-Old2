@@ -12,8 +12,8 @@ createCircle = (precision, origin, radius) ->
   circleArray = []
   for i in [0...precision]
     v =
-      X: origin.x + radius * Math.cos(angle * i)
-      Y: origin.y + radius * Math.sin(angle * i)
+      x: origin.x + radius * Math.cos(angle * i)
+      y: origin.y + radius * Math.sin(angle * i)
     circleArray.push(v)
   return [circleArray]
 
