@@ -218,8 +218,9 @@ class Game
     @_mouse_down = true
     @_dev_gui.onMouseDown(button, screen_pos)
 
-  onMouseUp: (screen_pos) ->
+  onMouseUp: (button, screen_pos) ->
     @_mouse_down = false
+    @_dev_gui.onMouseUp(button, screen_pos)
 
   onMouseMove: (screen_pos) ->
     if @_mouse_down and @_dev_gui.enabled

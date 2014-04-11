@@ -1,5 +1,6 @@
 
 #_require ./character/characters
+#_require ../util
 
 class DevGui
   enabled: false
@@ -11,6 +12,7 @@ class DevGui
   new_text: null  # PIXI text object for new character
   select_text: null  # PIXI text object to show seleted character
   control_text: null  # PIXI text object to show controlled character
+  terrain_brush: null
 
   screen_x: 0
   screen_y: 0
@@ -37,6 +39,7 @@ class DevGui
   mouse_actions: ["none", "new character", "add terrain", "remove terrain"]
   terrain_brush_size: 1
   terrain_brush_prec: 10
+  dragging: -1
 
   constructor: (@game) ->
     style = {font: "15px Arial", fill: "#FFFFFF"}
@@ -49,7 +52,20 @@ class DevGui
     @select_text = new PIXI.Text("Selected", style)
     @control_text = new PIXI.Text("Controlled", style)
 
+    @terrain_brush = new PIXI.Graphics()
+    @_onUpdateTerrainBrush()
+
     @new_char_options.onclick = @onCharacterClick
+
+  _onMouseActionChange: () =>
+    if (@left_mouse is "add terrain" or @left_mouse is "remove terrain" or
+        @right_mouse is "add terrain" or @right_mouse is "remove terrain")
+      @game.stage.addChild(@terrain_brush)
+      console.log('add')
+    else
+      if @terrain_brush in @game.stage.children
+        @game.stage.removeChild(@terrain_brush)
+        console.log('remove')
 
   create: () ->
     @gui = new dat.GUI()
@@ -58,8 +74,10 @@ class DevGui
     @root_folder.add(@, 'toggleDevMode')
     @_createMouseCoordsFolder()
     @_createGameFolder()
-    @root_folder.add(@, 'left_mouse', @mouse_actions)
-    @root_folder.add(@, 'right_mouse', @mouse_actions)
+    l = @root_folder.add(@, 'left_mouse', @mouse_actions)
+    l.onChange(@_onMouseActionChange)
+    r = @root_folder.add(@, 'right_mouse', @mouse_actions)
+    r.onChange(@_onMouseActionChange)
     @_createNewCharFolder()
     @_createTerrainBrushFolder()
     @_createCharacterFolder()
@@ -98,6 +116,9 @@ class DevGui
         @game.stage.removeChild(@new_text)
       @game.stage.removeChild(@select_text)
       @game.stage.removeChild(@control_text)
+      if @terrain_brush in @game.stage.children
+        @game.stage.removeChild(@terrain_brush)
+        console.log('remove')
       @remove()
     else
       @game.stage.addChild(@dev_text)
@@ -105,6 +126,10 @@ class DevGui
         @game.stage.addChild(@new_text)
       @game.stage.addChild(@select_text)
       @game.stage.addChild(@control_text)
+      if (@left_mouse is "add terrain" or @left_mouse is "remove terrain" or
+          @right_mouse is "add terrain" or @right_mouse is "remove terrain")
+        @game.stage.addChild(@terrain_brush)
+        console.log('add')
       @create()
     @enabled = not @enabled
 
@@ -150,10 +175,23 @@ class DevGui
     f.add(@game, "paused")
     f.add(@game, "camera_attached")
 
+  _onUpdateTerrainBrush: () =>
+    @terrain_brush.clear()
+    @terrain_brush.lineStyle(1, 0xBB0000)
+    c = createCircle(@terrain_brush_prec, {x: 0, y: 0},
+      @terrain_brush_size * settings.PPM)[0]
+    v0 = c[0]
+    @terrain_brush.moveTo(v0.x, v0.y)
+    for v in c[1..]
+      @terrain_brush.lineTo(v.x, v.y)
+    @terrain_brush.lineTo(v0.x, v0.y)
+
   _createTerrainBrushFolder: () ->
     f = @root_folder.addFolder("Terrain Brush Settings")
-    f.add(@, 'terrain_brush_size')
-    f.add(@, 'terrain_brush_prec')
+    size = f.add(@, 'terrain_brush_size')
+    size.onChange(@_onUpdateTerrainBrush)
+    prec = f.add(@, 'terrain_brush_prec')
+    prec.onChange(@_onUpdateTerrainBrush)
     # f.add(@, 'terrain_brush_shape', @brush_shapes)
 
   _createCharacterFolder: () ->
@@ -304,6 +342,11 @@ class DevGui
         @game.universe.removeTerrain(@world_x, @world_y,
           @terrain_brush_size, @terrain_brush_prec)
 
+    @dragging = button
+
+  onMouseUp: (button, screen_pos) ->
+    @dragging = -1
+
   onMouseMove: (screen_pos) ->
     w = @game.camera.screenToWorld(screen_pos)
     @setMouseCoords(screen_pos.x, screen_pos.y, w.x, w.y)
@@ -313,3 +356,20 @@ class DevGui
       h = @new_text.height
       @new_text.position.x = screen_pos.x - w / 2
       @new_text.position.y = screen_pos.y - h
+
+    @terrain_brush.position.x = @screen_x
+    @terrain_brush.position.y = @screen_y
+
+    m = null
+    if @dragging is @MOUSE_LEFT
+      m = @left_mouse
+    else if @dragging is @MOUSE_RIGHT
+      m = @right_mouse
+
+    switch m
+      when "add terrain"
+        @game.universe.addTerrain(@world_x, @world_y,
+          @terrain_brush_size, @terrain_brush_prec)
+      when "remove terrain"
+        @game.universe.removeTerrain(@world_x, @world_y,
+          @terrain_brush_size, @terrain_brush_prec)
