@@ -260,7 +260,7 @@ main = ->
     log_input("mouse up")
     x = e.layerX
     y = e.layerY
-    game.onMouseUp({x: x, y: y})
+    game.onMouseUp(e.button, {x: x, y: y})
 
   mouseOutHandler = (e) ->
     log_input("mouse out")

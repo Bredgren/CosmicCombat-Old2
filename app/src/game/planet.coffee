@@ -97,7 +97,17 @@ class Planet
     @universe.game.bg_stage.removeChild(@_terrain_mask)
 
   addTerrain: (x, y, size, precision) ->
-    console.log('a')
+    c = createCircle(precision, {x: x, y: y}, size)
+    result = []
+    for poly in @terrain
+      terrain_poly = []
+      terrain_poly.push(poly)
+      new_p = @_clipPoly(terrain_poly, c, ClipperLib.ClipType.ctUnion)
+      for p in new_p
+        result.push(p)
+
+    @terrain = result
+    @_updateTerrainBody()
 
   removeTerrain: (x, y, size, precision) ->
     c = createCircle(precision, {x: x, y: y}, size)

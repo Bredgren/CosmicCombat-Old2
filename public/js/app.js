@@ -945,6 +945,61 @@
 
   })();
 
+  boundedValue = function(value, min, max) {
+    var v;
+
+    v = value - min;
+    if (v < 0) {
+      v = max + v;
+    } else {
+      v = (v % (max - min)) + min;
+    }
+    return v;
+  };
+
+  createCircle = function(precision, origin, radius) {
+    var angle, circleArray, i, v, _i;
+
+    angle = 2 * Math.PI / precision;
+    circleArray = [];
+    for (i = _i = 0; 0 <= precision ? _i < precision : _i > precision; i = 0 <= precision ? ++_i : --_i) {
+      v = {
+        x: origin.x + radius * Math.cos(angle * i),
+        y: origin.y + radius * Math.sin(angle * i)
+      };
+      circleArray.push(v);
+    }
+    return [circleArray];
+  };
+
+  toCapitalCoords = function(array) {
+    var e, result, _i, _len;
+
+    result = [];
+    for (_i = 0, _len = array.length; _i < _len; _i++) {
+      e = array[_i];
+      result.push({
+        X: e.x,
+        Y: e.y
+      });
+    }
+    return result;
+  };
+
+  toLowerCoords = function(array) {
+    var e, result, _i, _len;
+
+    result = [];
+    for (_i = 0, _len = array.length; _i < _len; _i++) {
+      e = array[_i];
+      result.push({
+        x: e.X,
+        y: e.Y
+      });
+    }
+    return result;
+  };
+
   DevGui = (function() {
     DevGui.prototype.enabled = false;
 
@@ -959,6 +1014,8 @@
     DevGui.prototype.select_text = null;
 
     DevGui.prototype.control_text = null;
+
+    DevGui.prototype.terrain_brush = null;
 
     DevGui.prototype.screen_x = 0;
 
@@ -1007,12 +1064,16 @@
 
     DevGui.prototype.terrain_brush_prec = 10;
 
+    DevGui.prototype.dragging = -1;
+
     function DevGui(game) {
       var style;
 
       this.game = game;
       this.onCharacterClick = __bind(this.onCharacterClick, this);
       this._onChangeNewChar = __bind(this._onChangeNewChar, this);
+      this._onUpdateTerrainBrush = __bind(this._onUpdateTerrainBrush, this);
+      this._onMouseActionChange = __bind(this._onMouseActionChange, this);
       style = {
         font: "15px Arial",
         fill: "#FFFFFF"
@@ -1027,18 +1088,38 @@
       this.new_text = new PIXI.Text("Click to spawn Character", style);
       this.select_text = new PIXI.Text("Selected", style);
       this.control_text = new PIXI.Text("Controlled", style);
+      this.terrain_brush = new PIXI.Graphics();
+      this._onUpdateTerrainBrush();
       this.new_char_options.onclick = this.onCharacterClick;
     }
 
+    DevGui.prototype._onMouseActionChange = function() {
+      var _ref;
+
+      if (this.left_mouse === "add terrain" || this.left_mouse === "remove terrain" || this.right_mouse === "add terrain" || this.right_mouse === "remove terrain") {
+        this.game.stage.addChild(this.terrain_brush);
+        return console.log('add');
+      } else {
+        if (_ref = this.terrain_brush, __indexOf.call(this.game.stage.children, _ref) >= 0) {
+          this.game.stage.removeChild(this.terrain_brush);
+          return console.log('remove');
+        }
+      }
+    };
+
     DevGui.prototype.create = function() {
+      var l, r;
+
       this.gui = new dat.GUI();
       this.root_folder = this.gui.addFolder('Dev Controls');
       this.root_folder.open();
       this.root_folder.add(this, 'toggleDevMode');
       this._createMouseCoordsFolder();
       this._createGameFolder();
-      this.root_folder.add(this, 'left_mouse', this.mouse_actions);
-      this.root_folder.add(this, 'right_mouse', this.mouse_actions);
+      l = this.root_folder.add(this, 'left_mouse', this.mouse_actions);
+      l.onChange(this._onMouseActionChange);
+      r = this.root_folder.add(this, 'right_mouse', this.mouse_actions);
+      r.onChange(this._onMouseActionChange);
       this._createNewCharFolder();
       this._createTerrainBrushFolder();
       return this._createCharacterFolder();
@@ -1079,6 +1160,8 @@
     };
 
     DevGui.prototype.toggleDevMode = function() {
+      var _ref;
+
       if (this.enabled) {
         this.game.stage.removeChild(this.dev_text);
         if (this.new_char) {
@@ -1086,6 +1169,10 @@
         }
         this.game.stage.removeChild(this.select_text);
         this.game.stage.removeChild(this.control_text);
+        if (_ref = this.terrain_brush, __indexOf.call(this.game.stage.children, _ref) >= 0) {
+          this.game.stage.removeChild(this.terrain_brush);
+          console.log('remove');
+        }
         this.remove();
       } else {
         this.game.stage.addChild(this.dev_text);
@@ -1094,6 +1181,10 @@
         }
         this.game.stage.addChild(this.select_text);
         this.game.stage.addChild(this.control_text);
+        if (this.left_mouse === "add terrain" || this.left_mouse === "remove terrain" || this.right_mouse === "add terrain" || this.right_mouse === "remove terrain") {
+          this.game.stage.addChild(this.terrain_brush);
+          console.log('add');
+        }
         this.create();
       }
       return this.enabled = !this.enabled;
@@ -1151,12 +1242,33 @@
       return f.add(this.game, "camera_attached");
     };
 
+    DevGui.prototype._onUpdateTerrainBrush = function() {
+      var c, v, v0, _i, _len, _ref;
+
+      this.terrain_brush.clear();
+      this.terrain_brush.lineStyle(1, 0xBB0000);
+      c = createCircle(this.terrain_brush_prec, {
+        x: 0,
+        y: 0
+      }, this.terrain_brush_size * settings.PPM)[0];
+      v0 = c[0];
+      this.terrain_brush.moveTo(v0.x, v0.y);
+      _ref = c.slice(1);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        v = _ref[_i];
+        this.terrain_brush.lineTo(v.x, v.y);
+      }
+      return this.terrain_brush.lineTo(v0.x, v0.y);
+    };
+
     DevGui.prototype._createTerrainBrushFolder = function() {
-      var f;
+      var f, prec, size;
 
       f = this.root_folder.addFolder("Terrain Brush Settings");
-      f.add(this, 'terrain_brush_size');
-      return f.add(this, 'terrain_brush_prec');
+      size = f.add(this, 'terrain_brush_size');
+      size.onChange(this._onUpdateTerrainBrush);
+      prec = f.add(this, 'terrain_brush_prec');
+      return prec.onChange(this._onUpdateTerrainBrush);
     };
 
     DevGui.prototype._createCharacterFolder = function() {
@@ -1341,16 +1453,23 @@
       }
       switch (m) {
         case "new character":
-          return this.game.spawnCharacter(this.new_char_options);
+          this.game.spawnCharacter(this.new_char_options);
+          break;
         case "add terrain":
-          return this.game.universe.addTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
+          this.game.universe.addTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
+          break;
         case "remove terrain":
-          return this.game.universe.removeTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
+          this.game.universe.removeTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
       }
+      return this.dragging = button;
+    };
+
+    DevGui.prototype.onMouseUp = function(button, screen_pos) {
+      return this.dragging = -1;
     };
 
     DevGui.prototype.onMouseMove = function(screen_pos) {
-      var h, w;
+      var h, m, w;
 
       w = this.game.camera.screenToWorld(screen_pos);
       this.setMouseCoords(screen_pos.x, screen_pos.y, w.x, w.y);
@@ -1358,7 +1477,21 @@
         w = this.new_text.width;
         h = this.new_text.height;
         this.new_text.position.x = screen_pos.x - w / 2;
-        return this.new_text.position.y = screen_pos.y - h;
+        this.new_text.position.y = screen_pos.y - h;
+      }
+      this.terrain_brush.position.x = this.screen_x;
+      this.terrain_brush.position.y = this.screen_y;
+      m = null;
+      if (this.dragging === this.MOUSE_LEFT) {
+        m = this.left_mouse;
+      } else if (this.dragging === this.MOUSE_RIGHT) {
+        m = this.right_mouse;
+      }
+      switch (m) {
+        case "add terrain":
+          return this.game.universe.addTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
+        case "remove terrain":
+          return this.game.universe.removeTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
       }
     };
 
@@ -1439,61 +1572,6 @@
     return StarField;
 
   })();
-
-  boundedValue = function(value, min, max) {
-    var v;
-
-    v = value - min;
-    if (v < 0) {
-      v = max + v;
-    } else {
-      v = (v % (max - min)) + min;
-    }
-    return v;
-  };
-
-  createCircle = function(precision, origin, radius) {
-    var angle, circleArray, i, v, _i;
-
-    angle = 2 * Math.PI / precision;
-    circleArray = [];
-    for (i = _i = 0; 0 <= precision ? _i < precision : _i > precision; i = 0 <= precision ? ++_i : --_i) {
-      v = {
-        x: origin.x + radius * Math.cos(angle * i),
-        y: origin.y + radius * Math.sin(angle * i)
-      };
-      circleArray.push(v);
-    }
-    return [circleArray];
-  };
-
-  toCapitalCoords = function(array) {
-    var e, result, _i, _len;
-
-    result = [];
-    for (_i = 0, _len = array.length; _i < _len; _i++) {
-      e = array[_i];
-      result.push({
-        X: e.x,
-        Y: e.y
-      });
-    }
-    return result;
-  };
-
-  toLowerCoords = function(array) {
-    var e, result, _i, _len;
-
-    result = [];
-    for (_i = 0, _len = array.length; _i < _len; _i++) {
-      e = array[_i];
-      result.push({
-        x: e.X,
-        y: e.Y
-      });
-    }
-    return result;
-  };
 
   DebugDraw = (function(_super) {
     __extends(DebugDraw, _super);
@@ -1745,7 +1823,26 @@
     };
 
     Planet.prototype.addTerrain = function(x, y, size, precision) {
-      return console.log('a');
+      var c, new_p, p, poly, result, terrain_poly, _i, _j, _len, _len1, _ref;
+
+      c = createCircle(precision, {
+        x: x,
+        y: y
+      }, size);
+      result = [];
+      _ref = this.terrain;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        poly = _ref[_i];
+        terrain_poly = [];
+        terrain_poly.push(poly);
+        new_p = this._clipPoly(terrain_poly, c, ClipperLib.ClipType.ctUnion);
+        for (_j = 0, _len1 = new_p.length; _j < _len1; _j++) {
+          p = new_p[_j];
+          result.push(p);
+        }
+      }
+      this.terrain = result;
+      return this._updateTerrainBody();
     };
 
     Planet.prototype.removeTerrain = function(x, y, size, precision) {
@@ -2428,8 +2525,9 @@
       return this._dev_gui.onMouseDown(button, screen_pos);
     };
 
-    Game.prototype.onMouseUp = function(screen_pos) {
-      return this._mouse_down = false;
+    Game.prototype.onMouseUp = function(button, screen_pos) {
+      this._mouse_down = false;
+      return this._dev_gui.onMouseUp(button, screen_pos);
     };
 
     Game.prototype.onMouseMove = function(screen_pos) {
@@ -2761,7 +2859,7 @@
       log_input("mouse up");
       x = e.layerX;
       y = e.layerY;
-      return game.onMouseUp({
+      return game.onMouseUp(e.button, {
         x: x,
         y: y
       });
