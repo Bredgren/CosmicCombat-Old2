@@ -36,7 +36,7 @@ class DevGui
   con_update_fn: null
   left_mouse: ''
   right_mouse: ''
-  mouse_actions: ["none", "new character", "add terrain", "remove terrain"]
+  mouse_actions: ["none", "new character", "remove terrain"]
   terrain_brush_size: 1
   terrain_brush_prec: 10
   dragging: -1
@@ -179,7 +179,7 @@ class DevGui
     @terrain_brush.clear()
     @terrain_brush.lineStyle(1, 0xBB0000)
     c = createCircle(@terrain_brush_prec, {x: 0, y: 0},
-      @terrain_brush_size * settings.PPM)[0]
+      @terrain_brush_size * settings.PPM)
     v0 = c[0]
     @terrain_brush.moveTo(v0.x, v0.y)
     for v in c[1..]
@@ -335,9 +335,6 @@ class DevGui
     switch m
       when "new character"
         @game.spawnCharacter(@new_char_options)
-      when "add terrain"
-        @game.universe.addTerrain(@world_x, @world_y,
-          @terrain_brush_size, @terrain_brush_prec)
       when "remove terrain"
         @game.universe.removeTerrain(@world_x, @world_y,
           @terrain_brush_size, @terrain_brush_prec)
@@ -367,9 +364,6 @@ class DevGui
       m = @right_mouse
 
     switch m
-      when "add terrain"
-        @game.universe.addTerrain(@world_x, @world_y,
-          @terrain_brush_size, @terrain_brush_prec)
       when "remove terrain"
         @game.universe.removeTerrain(@world_x, @world_y,
           @terrain_brush_size, @terrain_brush_prec)

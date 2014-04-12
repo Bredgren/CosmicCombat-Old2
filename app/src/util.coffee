@@ -15,7 +15,7 @@ createCircle = (precision, origin, radius) ->
       x: origin.x + radius * Math.cos(angle * i)
       y: origin.y + radius * Math.sin(angle * i)
     circleArray.push(v)
-  return [circleArray]
+  return circleArray
 
 toCapitalCoords = (array) ->
   result = []

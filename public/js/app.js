@@ -969,7 +969,7 @@
       };
       circleArray.push(v);
     }
-    return [circleArray];
+    return circleArray;
   };
 
   toCapitalCoords = function(array) {
@@ -1058,7 +1058,7 @@
 
     DevGui.prototype.right_mouse = '';
 
-    DevGui.prototype.mouse_actions = ["none", "new character", "add terrain", "remove terrain"];
+    DevGui.prototype.mouse_actions = ["none", "new character", "remove terrain"];
 
     DevGui.prototype.terrain_brush_size = 1;
 
@@ -1250,7 +1250,7 @@
       c = createCircle(this.terrain_brush_prec, {
         x: 0,
         y: 0
-      }, this.terrain_brush_size * settings.PPM)[0];
+      }, this.terrain_brush_size * settings.PPM);
       v0 = c[0];
       this.terrain_brush.moveTo(v0.x, v0.y);
       _ref = c.slice(1);
@@ -1455,9 +1455,6 @@
         case "new character":
           this.game.spawnCharacter(this.new_char_options);
           break;
-        case "add terrain":
-          this.game.universe.addTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
-          break;
         case "remove terrain":
           this.game.universe.removeTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
       }
@@ -1488,8 +1485,6 @@
         m = this.right_mouse;
       }
       switch (m) {
-        case "add terrain":
-          return this.game.universe.addTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
         case "remove terrain":
           return this.game.universe.removeTerrain(this.world_x, this.world_y, this.terrain_brush_size, this.terrain_brush_prec);
       }
@@ -1718,6 +1713,8 @@
 
     Planet.prototype.terrain = [];
 
+    Planet.prototype.base = null;
+
     Planet.prototype.characters = [];
 
     Planet.prototype._background_sprite = null;
@@ -1810,6 +1807,7 @@
 
     Planet.prototype.load = function() {
       this._loadTerrain();
+      this._loadBase();
       this.universe.game.bg_stage.addChild(this._background_sprite);
       this.universe.game.bg_stage.addChild(this._terrain_sprite);
       return this.universe.game.bg_stage.addChild(this._terrain_mask);
@@ -1817,41 +1815,33 @@
 
     Planet.prototype.unload = function() {
       this._unloadTerrain();
+      this._unloadBase();
       this.universe.game.bg_stage.removeChild(this._background_sprite);
       this.universe.game.bg_stage.removeChild(this._terrain_sprite);
       return this.universe.game.bg_stage.removeChild(this._terrain_mask);
     };
 
-    Planet.prototype.addTerrain = function(x, y, size, precision) {
-      var c, new_p, p, poly, result, terrain_poly, _i, _j, _len, _len1, _ref;
-
-      c = createCircle(precision, {
-        x: x,
-        y: y
-      }, size);
-      result = [];
-      _ref = this.terrain;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        poly = _ref[_i];
-        terrain_poly = [];
-        terrain_poly.push(poly);
-        new_p = this._clipPoly(terrain_poly, c, ClipperLib.ClipType.ctUnion);
-        for (_j = 0, _len1 = new_p.length; _j < _len1; _j++) {
-          p = new_p[_j];
-          result.push(p);
-        }
-      }
-      this.terrain = result;
-      return this._updateTerrainBody();
-    };
-
     Planet.prototype.removeTerrain = function(x, y, size, precision) {
-      var c, new_p, p, poly, result, terrain_poly, _i, _j, _len, _len1, _ref;
+      var bounds, c, new_p, p, poly, result, terrain_poly, _i, _j, _len, _len1, _ref;
 
-      c = createCircle(precision, {
-        x: x,
-        y: y
-      }, size);
+      c = [
+        createCircle(precision, {
+          x: x,
+          y: y
+        }, size)
+      ];
+      bounds = this.getBounds();
+      if (x - size < bounds.x) {
+        c.push(createCircle(precision, {
+          x: x + bounds.w,
+          y: y
+        }, size));
+      } else if (x + size > bounds.x + bounds.w) {
+        c.push(createCircle(precision, {
+          x: x - bounds.w,
+          y: y
+        }, size));
+      }
       result = [];
       _ref = this.terrain;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -2029,6 +2019,39 @@
       while (body) {
         data = body.GetUserData();
         if (data && data === "Terrain") {
+          this.world.DestroyBody(body);
+        }
+        _results.push(body = body.GetNext());
+      }
+      return _results;
+    };
+
+    Planet.prototype._loadBase = function() {
+      var bodyDef, fixDef, thickness;
+
+      thickness = 5;
+      bodyDef = new b2Dynamics.b2BodyDef();
+      bodyDef.type = b2Dynamics.b2Body.b2_staticBody;
+      bodyDef.userData = "Base";
+      bodyDef.position.x = 0;
+      bodyDef.position.y = this.depth + thickness / 2;
+      fixDef = new b2Dynamics.b2FixtureDef();
+      fixDef.density = 1.0;
+      fixDef.friction = 0.5;
+      fixDef.restitution = 0;
+      fixDef.shape = new b2Shapes.b2PolygonShape();
+      fixDef.shape.SetAsBox(this.size, thickness / 2);
+      return this.world.CreateBody(bodyDef).CreateFixture(fixDef);
+    };
+
+    Planet.prototype._unloadBase = function() {
+      var body, data, _results;
+
+      body = this.world.GetBodyList();
+      _results = [];
+      while (body) {
+        data = body.GetUserData();
+        if (data && data === "Base") {
           this.world.DestroyBody(body);
         }
         _results.push(body = body.GetNext());
@@ -2285,10 +2308,6 @@
       character = Characters.newCharacter(this, pos, type, callback);
       this.characters.push(character);
       return character;
-    };
-
-    Universe.prototype.addTerrain = function(x, y, size, prec) {
-      return this.current_planet.addTerrain(x, y, size, prec);
     };
 
     Universe.prototype.removeTerrain = function(x, y, size, prec) {

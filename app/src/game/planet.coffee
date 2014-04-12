@@ -8,6 +8,7 @@ class Planet
   depth: 10
   height: 30
   terrain: []
+  base: null
   characters: []
   # neighbors: []
   _background_sprite: null
@@ -85,6 +86,7 @@ class Planet
   # Adds physics items to the world, ...
   load: () ->
     @_loadTerrain()
+    @_loadBase()
     @universe.game.bg_stage.addChild(@_background_sprite)
     @universe.game.bg_stage.addChild(@_terrain_sprite)
     @universe.game.bg_stage.addChild(@_terrain_mask)
@@ -92,25 +94,18 @@ class Planet
   # Removes  physics items from the world and sprites from the stage
   unload: () ->
     @_unloadTerrain()
+    @_unloadBase()
     @universe.game.bg_stage.removeChild(@_background_sprite)
     @universe.game.bg_stage.removeChild(@_terrain_sprite)
     @universe.game.bg_stage.removeChild(@_terrain_mask)
 
-  addTerrain: (x, y, size, precision) ->
-    c = createCircle(precision, {x: x, y: y}, size)
-    result = []
-    for poly in @terrain
-      terrain_poly = []
-      terrain_poly.push(poly)
-      new_p = @_clipPoly(terrain_poly, c, ClipperLib.ClipType.ctUnion)
-      for p in new_p
-        result.push(p)
-
-    @terrain = result
-    @_updateTerrainBody()
-
   removeTerrain: (x, y, size, precision) ->
-    c = createCircle(precision, {x: x, y: y}, size)
+    c = [createCircle(precision, {x: x, y: y}, size)]
+    bounds = @getBounds()
+    if x - size < bounds.x
+      c.push(createCircle(precision, {x: x + bounds.w, y: y}, size))
+    else if x + size > bounds.x + bounds.w
+      c.push(createCircle(precision, {x: x - bounds.w, y: y}, size))
     result = []
     for poly in @terrain
       terrain_poly = []
@@ -240,6 +235,32 @@ class Planet
     while body
       data = body.GetUserData()
       if data and data == "Terrain"
+        @world.DestroyBody(body)
+      body = body.GetNext()
+
+  _loadBase: () ->
+    thickness = 5
+
+    bodyDef = new b2Dynamics.b2BodyDef()
+    bodyDef.type = b2Dynamics.b2Body.b2_staticBody
+    bodyDef.userData = "Base"
+    bodyDef.position.x = 0
+    bodyDef.position.y = @depth + thickness / 2
+
+    fixDef = new b2Dynamics.b2FixtureDef()
+    fixDef.density = 1.0
+    fixDef.friction = 0.5
+    fixDef.restitution = 0 #0.2
+    fixDef.shape = new b2Shapes.b2PolygonShape()
+    fixDef.shape.SetAsBox(@size, thickness / 2)
+
+    @world.CreateBody(bodyDef).CreateFixture(fixDef)
+
+  _unloadBase: () ->
+    body = @world.GetBodyList()
+    while body
+      data = body.GetUserData()
+      if data and data == "Base"
         @world.DestroyBody(body)
       body = body.GetNext()
 
