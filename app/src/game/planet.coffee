@@ -14,6 +14,8 @@ class Planet
   _background_sprite: null
   _terrain_sprite: null
   _terrain_mask: null
+  _base_sprite: null
+  _base_poly: null
 
   # size [Number] the circumference in meters. This size will be rounded down to
   #               be a multiple of the background tile size so that the
@@ -28,6 +30,7 @@ class Planet
     @_terrain_mask = new PIXI.Graphics()
 
     @_initTerrain()
+    @_initBase()
     @_initBackground()
 
   update: () ->
@@ -90,6 +93,7 @@ class Planet
     @universe.game.bg_stage.addChild(@_background_sprite)
     @universe.game.bg_stage.addChild(@_terrain_sprite)
     @universe.game.bg_stage.addChild(@_terrain_mask)
+    @universe.game.bg_stage.addChild(@_base_sprite)
 
   # Removes  physics items from the world and sprites from the stage
   unload: () ->
@@ -98,6 +102,7 @@ class Planet
     @universe.game.bg_stage.removeChild(@_background_sprite)
     @universe.game.bg_stage.removeChild(@_terrain_sprite)
     @universe.game.bg_stage.removeChild(@_terrain_mask)
+    @universe.game.bg_stage.removeChild(@_base_sprite)
 
   removeTerrain: (x, y, size, precision) ->
     c = [createCircle(precision, {x: x, y: y}, size)]
@@ -207,6 +212,66 @@ class Planet
     @_terrain_sprite.anchor.y = 1
     @_terrain_sprite.mask = @_terrain_mask
 
+  _initBase: () ->
+    thickness = 5
+
+    w = @size
+    h = thickness
+    cx = 0
+    cy = @depth + thickness / 2
+    num_points = 2#@depth / 2
+    min_y = @depth
+    points = []
+    # end_y = min_y - Math.random() * 2
+    # points.push({x: cx - (w / 2) + 0, y: cy - (h / 2) + end_y})
+    # for i in [1...num_points-1]
+    #   x = cx - (w / 2) + (@size / num_points * i)
+    #   y = Math.random() * 2
+    #   points.push({x: cx - (w / 2) + x, y: cy - (h / 2) + y})
+    # x = cx - (w / 2) + (@size / (num_points - 1))
+    # points.push({x: cx - (w / 2) + x, y: cy - (h / 2) + end_y})
+
+    # points.push({x: cx + (w / 2), y: cy + (h / 2)})
+    # points.push({x: cx - (w / 2), y: cy + (h / 2)})
+    points.push({x: cx - (w / 2), y: cy - (h /2)})
+    points.push({x: cx + (w / 2), y: cy - (h /2)})
+    # points.push({x: cx - (w / 2) + @size/4, y: cy - (h /2)}-2)
+    points.push({x: cx - (w / 2) + @size/2, y: cy - (h /2)-1})
+    # points.push({x: cx - (w / 2) + 3*@size/4, y: cy - (h /2)}-3)
+    points.push({x: cx + (w / 2), y: cy + (h /2)})
+    points.push({x: cx - (w / 2), y: cy + (h /2)})
+
+    @_base_poly = points
+
+    # edge_w = Math.ceil(settings.WIDTH / settings.TILE_SIZE)
+    # w = (@size * settings.PPM) + (edge_w * settings.TILE_SIZE)
+    # h = (@depth + @MAX_TERRAIN_HEIGHT) * settings.PPM
+
+    # tex = new PIXI.RenderTexture(w, h)
+    # container = new PIXI.DisplayObjectContainer()
+
+    # w_count = w / settings.TILE_SIZE #
+    # h_count = h / settings.TILE_SIZE
+    # for x in [0...w_count]
+    #   for y in [0...h_count]
+    #     tile = PIXI.Sprite.fromFrame("terrain_1")
+    #     tile.position.x = x * settings.TILE_SIZE
+    #     tile.position.y = y * settings.TILE_SIZE
+    #     container.addChild(tile)
+    # tex.render(container)
+
+    # @_terrain_sprite = new PIXI.Sprite(tex)
+    # @_terrain_sprite.anchor.x = 0.5
+    # @_terrain_sprite.anchor.y = 1
+    # @_terrain_sprite.mask = @_terrain_mask
+
+    tile = PIXI.Sprite.fromFrame("base_1")
+    tile.anchor.x = 0.5
+    tile.anchor.y = 0.5
+    tile.position.x = 0
+    tile.position.y = 0
+    @_base_sprite = tile
+
   _updateTerrainBody: () ->
     @_unloadTerrain()
     @_loadTerrain()
@@ -239,20 +304,19 @@ class Planet
       body = body.GetNext()
 
   _loadBase: () ->
-    thickness = 5
-
     bodyDef = new b2Dynamics.b2BodyDef()
     bodyDef.type = b2Dynamics.b2Body.b2_staticBody
     bodyDef.userData = "Base"
-    bodyDef.position.x = 0
-    bodyDef.position.y = @depth + thickness / 2
 
     fixDef = new b2Dynamics.b2FixtureDef()
     fixDef.density = 1.0
     fixDef.friction = 0.5
     fixDef.restitution = 0 #0.2
     fixDef.shape = new b2Shapes.b2PolygonShape()
-    fixDef.shape.SetAsBox(@size, thickness / 2)
+    shape = []
+    for v in @_base_poly
+      shape.push(new b2Vec2(v.x, v.y))
+    fixDef.shape.SetAsArray(shape, shape.length)
 
     @world.CreateBody(bodyDef).CreateFixture(fixDef)
 

@@ -1697,6 +1697,10 @@
 
     Planet.prototype._terrain_mask = null;
 
+    Planet.prototype._base_sprite = null;
+
+    Planet.prototype._base_poly = null;
+
     function Planet(universe, size) {
       this.universe = universe;
       this.size = size;
@@ -1706,6 +1710,7 @@
       this.world = this.universe.world;
       this._terrain_mask = new PIXI.Graphics();
       this._initTerrain();
+      this._initBase();
       this._initBackground();
     }
 
@@ -1784,7 +1789,8 @@
       this._loadBase();
       this.universe.game.bg_stage.addChild(this._background_sprite);
       this.universe.game.bg_stage.addChild(this._terrain_sprite);
-      return this.universe.game.bg_stage.addChild(this._terrain_mask);
+      this.universe.game.bg_stage.addChild(this._terrain_mask);
+      return this.universe.game.bg_stage.addChild(this._base_sprite);
     };
 
     Planet.prototype.unload = function() {
@@ -1792,7 +1798,8 @@
       this._unloadBase();
       this.universe.game.bg_stage.removeChild(this._background_sprite);
       this.universe.game.bg_stage.removeChild(this._terrain_sprite);
-      return this.universe.game.bg_stage.removeChild(this._terrain_mask);
+      this.universe.game.bg_stage.removeChild(this._terrain_mask);
+      return this.universe.game.bg_stage.removeChild(this._base_sprite);
     };
 
     Planet.prototype.removeTerrain = function(x, y, size, precision) {
@@ -1954,6 +1961,46 @@
       return this._terrain_sprite.mask = this._terrain_mask;
     };
 
+    Planet.prototype._initBase = function() {
+      var cx, cy, h, min_y, num_points, points, thickness, tile, w;
+
+      thickness = 5;
+      w = this.size;
+      h = thickness;
+      cx = 0;
+      cy = this.depth + thickness / 2;
+      num_points = 2;
+      min_y = this.depth;
+      points = [];
+      points.push({
+        x: cx - (w / 2),
+        y: cy - (h / 2)
+      });
+      points.push({
+        x: cx + (w / 2),
+        y: cy - (h / 2)
+      });
+      points.push({
+        x: cx - (w / 2) + this.size / 2,
+        y: cy - (h / 2) - 1
+      });
+      points.push({
+        x: cx + (w / 2),
+        y: cy + (h / 2)
+      });
+      points.push({
+        x: cx - (w / 2),
+        y: cy + (h / 2)
+      });
+      this._base_poly = points;
+      tile = PIXI.Sprite.fromFrame("base_1");
+      tile.anchor.x = 0.5;
+      tile.anchor.y = 0.5;
+      tile.position.x = 0;
+      tile.position.y = 0;
+      return this._base_sprite = tile;
+    };
+
     Planet.prototype._updateTerrainBody = function() {
       this._unloadTerrain();
       return this._loadTerrain();
@@ -2001,20 +2048,23 @@
     };
 
     Planet.prototype._loadBase = function() {
-      var bodyDef, fixDef, thickness;
+      var bodyDef, fixDef, shape, v, _i, _len, _ref;
 
-      thickness = 5;
       bodyDef = new b2Dynamics.b2BodyDef();
       bodyDef.type = b2Dynamics.b2Body.b2_staticBody;
       bodyDef.userData = "Base";
-      bodyDef.position.x = 0;
-      bodyDef.position.y = this.depth + thickness / 2;
       fixDef = new b2Dynamics.b2FixtureDef();
       fixDef.density = 1.0;
       fixDef.friction = 0.5;
       fixDef.restitution = 0;
       fixDef.shape = new b2Shapes.b2PolygonShape();
-      fixDef.shape.SetAsBox(this.size, thickness / 2);
+      shape = [];
+      _ref = this._base_poly;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        v = _ref[_i];
+        shape.push(new b2Vec2(v.x, v.y));
+      }
+      fixDef.shape.SetAsArray(shape, shape.length);
       return this.world.CreateBody(bodyDef).CreateFixture(fixDef);
     };
 

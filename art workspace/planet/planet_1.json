@@ -8,19 +8,25 @@
 },
 "atm_top_1.png" :
 {
-	"frame": {"x":513,"y":0,"w":256,"h":512},
+	"frame": {"x":770,"y":513,"w":256,"h":512},
 	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":512},
 	"sourceSize": {"w":256,"h":512}
 },
+"base1.png" :
+{
+	"frame": {"x":0,"y":257,"w":512,"h":512},
+	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":512},
+	"sourceSize": {"w":512,"h":512}
+},
 "cloud_1.png" :
 {
-	"frame": {"x":0,"y":513,"w":512,"h":256},
+	"frame": {"x":0,"y":0,"w":512,"h":256},
 	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":256},
 	"sourceSize": {"w":512,"h":256}
 },
 "terrain_1.png" :
 {
-	"frame": {"x":0,"y":0,"w":512,"h":512},
+	"frame": {"x":513,"y":0,"w":512,"h":512},
 	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":512},
 	"sourceSize": {"w":512,"h":512}
 },
@@ -29,10 +35,11 @@
 	"frame": {"x":513,"y":513,"w":256,"h":512},
 	"spriteSourceSize": {"x":0,"y":0,"w":256,"h":512},
 	"sourceSize": {"w":256,"h":512}
-},
+}
 
 },
 "meta": {
-	"size": {"w":770,"h":1027}
+  "image": "planet_1.png",
+	"size": {"w":1027,"h":1027}
 }
 }
