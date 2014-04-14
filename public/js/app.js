@@ -1009,8 +1009,6 @@
 
     DevGui.prototype.text = null;
 
-    DevGui.prototype.new_text = null;
-
     DevGui.prototype.select_text = null;
 
     DevGui.prototype.control_text = null;
@@ -1071,7 +1069,6 @@
 
       this.game = game;
       this.onCharacterClick = __bind(this.onCharacterClick, this);
-      this._onChangeNewChar = __bind(this._onChangeNewChar, this);
       this._onUpdateTerrainBrush = __bind(this._onUpdateTerrainBrush, this);
       this._onMouseActionChange = __bind(this._onMouseActionChange, this);
       style = {
@@ -1085,7 +1082,6 @@
         font: "10px Arial",
         fill: "#FFFFFF"
       };
-      this.new_text = new PIXI.Text("Click to spawn Character", style);
       this.select_text = new PIXI.Text("Selected", style);
       this.control_text = new PIXI.Text("Controlled", style);
       this.terrain_brush = new PIXI.Graphics();
@@ -1126,6 +1122,8 @@
     };
 
     DevGui.prototype.remove = function() {
+      this._removeSelCharFolder();
+      this._removeConCharFolder();
       return this.gui.destroy();
     };
 
@@ -1164,9 +1162,6 @@
 
       if (this.enabled) {
         this.game.stage.removeChild(this.dev_text);
-        if (this.new_char) {
-          this.game.stage.removeChild(this.new_text);
-        }
         this.game.stage.removeChild(this.select_text);
         this.game.stage.removeChild(this.control_text);
         if (_ref = this.terrain_brush, __indexOf.call(this.game.stage.children, _ref) >= 0) {
@@ -1176,9 +1171,6 @@
         this.remove();
       } else {
         this.game.stage.addChild(this.dev_text);
-        if (this.new_char) {
-          this.game.stage.addChild(this.new_text);
-        }
         this.game.stage.addChild(this.select_text);
         this.game.stage.addChild(this.control_text);
         if (this.left_mouse === "add terrain" || this.left_mouse === "remove terrain" || this.right_mouse === "add terrain" || this.right_mouse === "remove terrain") {
@@ -1291,9 +1283,6 @@
       if (!char) {
         return;
       }
-      if (this.sel_char_folder) {
-        this._removeSelCharFolder();
-      }
       this.sel_char_folder = this.char_folder.addFolder("Selected Character");
       this.sel_char_folder.add(this, "takeControl").listen();
       return this.sel_update_fn = this._fillCharFolder(char, this.sel_char_folder);
@@ -1320,9 +1309,6 @@
       char = this.game.getControlledCharacter();
       if (!char) {
         return;
-      }
-      if (this.con_char_folder) {
-        this._removeConCharFolder();
       }
       this.con_char_folder = this.char_folder.addFolder("Controlled Character");
       this.con_update_fn = this._fillCharFolder(char, this.con_char_folder);
@@ -1402,14 +1388,6 @@
       return f.add(char, "not_ground_not_move_damp");
     };
 
-    DevGui.prototype._onChangeNewChar = function(value) {
-      if (value) {
-        return this.game.stage.addChild(this.new_text);
-      } else {
-        return this.game.stage.removeChild(this.new_text);
-      }
-    };
-
     DevGui.prototype._selectCharacter = function(character) {
       var c;
 
@@ -1418,6 +1396,7 @@
         return;
       }
       this.selected_char = character;
+      this._removeSelCharFolder();
       return this._createSelCharFolder();
     };
 
@@ -1430,6 +1409,7 @@
           c.endAll();
         }
         this.game.setControlledCharacter(this.selected_char);
+        this._removeConCharFolder();
         this._createConCharFolder();
         this._removeSelCharFolder();
         return this.selected_char = null;
@@ -1466,16 +1446,10 @@
     };
 
     DevGui.prototype.onMouseMove = function(screen_pos) {
-      var h, m, w;
+      var m, w;
 
       w = this.game.camera.screenToWorld(screen_pos);
       this.setMouseCoords(screen_pos.x, screen_pos.y, w.x, w.y);
-      if (this.new_char) {
-        w = this.new_text.width;
-        h = this.new_text.height;
-        this.new_text.position.x = screen_pos.x - w / 2;
-        this.new_text.position.y = screen_pos.y - h;
-      }
       this.terrain_brush.position.x = this.screen_x;
       this.terrain_brush.position.y = this.screen_y;
       m = null;

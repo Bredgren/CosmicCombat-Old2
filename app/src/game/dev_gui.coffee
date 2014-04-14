@@ -9,7 +9,6 @@ class DevGui
   MOUSE_RIGHT: 2
 
   text: null  # PIXI text object for the "Dev-Mode" text
-  new_text: null  # PIXI text object for new character
   select_text: null  # PIXI text object to show seleted character
   control_text: null  # PIXI text object to show controlled character
   terrain_brush: null
@@ -48,7 +47,6 @@ class DevGui
     @dev_text.position.y = 5
 
     style = {font: "10px Arial", fill: "#FFFFFF"}
-    @new_text = new PIXI.Text("Click to spawn Character", style)
     @select_text = new PIXI.Text("Selected", style)
     @control_text = new PIXI.Text("Controlled", style)
 
@@ -83,6 +81,8 @@ class DevGui
     @_createCharacterFolder()
 
   remove: () ->
+    @_removeSelCharFolder()
+    @_removeConCharFolder()
     @gui.destroy()
 
   update: () ->
@@ -112,8 +112,6 @@ class DevGui
   toggleDevMode: () ->
     if @enabled
       @game.stage.removeChild(@dev_text)
-      if @new_char
-        @game.stage.removeChild(@new_text)
       @game.stage.removeChild(@select_text)
       @game.stage.removeChild(@control_text)
       if @terrain_brush in @game.stage.children
@@ -122,8 +120,6 @@ class DevGui
       @remove()
     else
       @game.stage.addChild(@dev_text)
-      if @new_char
-        @game.stage.addChild(@new_text)
       @game.stage.addChild(@select_text)
       @game.stage.addChild(@control_text)
       if (@left_mouse is "add terrain" or @left_mouse is "remove terrain" or
@@ -201,16 +197,11 @@ class DevGui
 
   _createNewCharFolder: () ->
     f = @root_folder.addFolder("New Character Settings")
-    # a = f.add(@, 'new_char')
-    # a.onChange(@_onChangeNewChar)
     f.add(@new_char_options, 'type', Characters.TYPES)
 
   _createSelCharFolder: () ->
     char = @selected_char
     if not char then return
-
-    if @sel_char_folder
-      @_removeSelCharFolder()
 
     @sel_char_folder = @char_folder.addFolder("Selected Character")
     @sel_char_folder.add(@, "takeControl").listen()
@@ -228,9 +219,6 @@ class DevGui
   _createConCharFolder: () ->
     char = @game.getControlledCharacter()
     if not char then return
-
-    if @con_char_folder
-      @_removeConCharFolder()
 
     @con_char_folder = @char_folder.addFolder("Controlled Character")
     @con_update_fn = @_fillCharFolder(char, @con_char_folder)
@@ -300,16 +288,11 @@ class DevGui
     f.add(char, "not_ground_move_damp")
     f.add(char, "not_ground_not_move_damp")
 
-  _onChangeNewChar: (value) =>
-    if value
-      @game.stage.addChild(@new_text)
-    else
-      @game.stage.removeChild(@new_text)
-
   _selectCharacter: (character) ->
     c = @game.getControlledCharacter()
     if character is c or character is @selected_char then return
     @selected_char = character
+    @_removeSelCharFolder()
     @_createSelCharFolder()
 
   takeControl: () ->
@@ -317,6 +300,7 @@ class DevGui
       c = @game.getControlledCharacter()
       if c then c.endAll()
       @game.setControlledCharacter(@selected_char)
+      @_removeConCharFolder()
       @_createConCharFolder()
       @_removeSelCharFolder()
       @selected_char = null
@@ -347,12 +331,6 @@ class DevGui
   onMouseMove: (screen_pos) ->
     w = @game.camera.screenToWorld(screen_pos)
     @setMouseCoords(screen_pos.x, screen_pos.y, w.x, w.y)
-
-    if @new_char
-      w = @new_text.width
-      h = @new_text.height
-      @new_text.position.x = screen_pos.x - w / 2
-      @new_text.position.y = screen_pos.y - h
 
     @terrain_brush.position.x = @screen_x
     @terrain_brush.position.y = @screen_y
