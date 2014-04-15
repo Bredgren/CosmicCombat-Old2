@@ -2,6 +2,18 @@
 
 "dev_guy_small_stand_1" :
 {
+	"frame": {"x":102,"y":0,"w":50,"h":80},
+	"spriteSourceSize": {"x":0,"y":0,"w":50,"h":80},
+	"sourceSize": {"w":50,"h":80}
+},
+"dev_guy_small_stand_2" :
+{
+	"frame": {"x":51,"y":0,"w":50,"h":80},
+	"spriteSourceSize": {"x":0,"y":0,"w":50,"h":80},
+	"sourceSize": {"w":50,"h":80}
+},
+"dev_guy_small_stand_3" :
+{
 	"frame": {"x":0,"y":0,"w":50,"h":80},
 	"spriteSourceSize": {"x":0,"y":0,"w":50,"h":80},
 	"sourceSize": {"w":50,"h":80}
@@ -9,7 +21,7 @@
 
 },
 "meta": {
-  "image": "dev_guy_small.png",
-	"size": {"w":51,"h":81}
+  "imag": "dev_guy_small.png"
+	"size": {"w":153,"h":81}
 }
 }

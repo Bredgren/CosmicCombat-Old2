@@ -832,12 +832,21 @@
     DevGuySmall.prototype.improve_rate = 0.05;
 
     function DevGuySmall(universe, init_pos, click_callback) {
-      var _this = this;
+      var i, stand_tex, _i,
+        _this = this;
 
       DevGuySmall.__super__.constructor.call(this, universe, init_pos, click_callback);
-      this.stand = PIXI.Sprite.fromFrame("dev_guy_small_stand_1");
+      stand_tex = [];
+      for (i = _i = 1; _i <= 3; i = ++_i) {
+        stand_tex.push(PIXI.Texture.fromFrame("dev_guy_small_stand_" + i));
+      }
+      stand_tex.push(PIXI.Texture.fromFrame("dev_guy_small_stand_2"));
+      this.stand = new PIXI.MovieClip(stand_tex);
       this.stand.anchor.x = .5;
       this.stand.anchor.y = .5;
+      this.stand.loop = true;
+      this.stand.animationSpeed = 0.05;
+      this.stand.play();
       this._stage.addChild(this.stand);
       this.stand.setInteractive(true);
       this.stand.click = function(mousedata) {
