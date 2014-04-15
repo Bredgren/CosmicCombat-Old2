@@ -28,7 +28,7 @@ class DevGui
     pos:
       x: 0
       y: 0
-    type: Characters.GOKU
+    type: Characters.DEFAULT
     onclick: null
   selected_char: null  # the currently selected character
   sel_update_fn: null

@@ -7,7 +7,7 @@
 $ ->
   DOM_LOADED = true
   assets = ["assets/img/jackie_chun.json", "assets/img/goku.json",
-    "assets/img/planet_1.json"]
+    "assets/img/planet_1.json", "assets/img/dev_guy_small.json"]
   loader = new PIXI.AssetLoader(assets)
   loader.onComplete = main
   loader.load()

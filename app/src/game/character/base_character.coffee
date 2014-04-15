@@ -247,7 +247,7 @@ class BaseCharacter
   _positionSprite: (sprite) ->
     pos = @universe.getDrawingPosWrapped(@body.GetPosition())
     sprite.position.x = pos.x
-    sprite.position.y = pos.y
+    sprite.position.y = pos.y + (@_offset or 0)
 
     if @_move_direction.x > 0
       sprite.scale.x = 1
