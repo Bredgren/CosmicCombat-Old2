@@ -1717,7 +1717,7 @@
     Planet.prototype.update = function() {};
 
     Planet.prototype.draw = function() {
-      var alt_x, bg_pos, bounds, dif, drawPoly, max_x, max_y, min_x, min_y, poly, trn_pos, v, wrapped_poly1, wrapped_poly2, _i, _j, _k, _len, _len1, _len2, _ref,
+      var alt_x, base_pos, bg_pos, bounds, dif, drawPoly, max_x, max_y, min_x, min_y, poly, trn_pos, v, wrapped_poly1, wrapped_poly2, _i, _j, _k, _len, _len1, _len2, _ref,
         _this = this;
 
       drawPoly = function(vertices) {
@@ -1774,7 +1774,10 @@
       this._background_sprite.position.y = bg_pos.y;
       trn_pos = this.universe.camera.worldToScreen(new b2Vec2(0, this.depth));
       this._terrain_sprite.position.x = trn_pos.x;
-      return this._terrain_sprite.position.y = trn_pos.y;
+      this._terrain_sprite.position.y = trn_pos.y;
+      base_pos = this.universe.camera.worldToScreen(new b2Vec2(0, this.depth));
+      this._base_sprite.position.x = base_pos.x;
+      return this._base_sprite.position.y = base_pos.y;
     };
 
     Planet.prototype.getBounds = function() {
@@ -1962,14 +1965,13 @@
     };
 
     Planet.prototype._initBase = function() {
-      var cx, cy, h, min_y, num_points, points, thickness, tile, w;
+      var container, cx, cy, edge_w, h, h_count, min_y, points, tex, thickness, tile, w, w_count, x, y, _i, _j;
 
       thickness = 5;
       w = this.size;
       h = thickness;
       cx = 0;
       cy = this.depth + thickness / 2;
-      num_points = 2;
       min_y = this.depth;
       points = [];
       points.push({
@@ -1981,10 +1983,6 @@
         y: cy - (h / 2)
       });
       points.push({
-        x: cx - (w / 2) + this.size / 2,
-        y: cy - (h / 2) - 1
-      });
-      points.push({
         x: cx + (w / 2),
         y: cy + (h / 2)
       });
@@ -1993,12 +1991,25 @@
         y: cy + (h / 2)
       });
       this._base_poly = points;
-      tile = PIXI.Sprite.fromFrame("base_1");
-      tile.anchor.x = 0.5;
-      tile.anchor.y = 0.5;
-      tile.position.x = 0;
-      tile.position.y = 0;
-      return this._base_sprite = tile;
+      edge_w = Math.ceil(settings.WIDTH / settings.TILE_SIZE);
+      w = (this.size * settings.PPM) + (edge_w * settings.TILE_SIZE);
+      h = (this.depth + thickness) * settings.PPM;
+      tex = new PIXI.RenderTexture(w, h);
+      container = new PIXI.DisplayObjectContainer();
+      w_count = w / settings.TILE_SIZE;
+      h_count = h / settings.TILE_SIZE;
+      for (x = _i = 0; 0 <= w_count ? _i < w_count : _i > w_count; x = 0 <= w_count ? ++_i : --_i) {
+        for (y = _j = 0; 0 <= h_count ? _j < h_count : _j > h_count; y = 0 <= h_count ? ++_j : --_j) {
+          tile = PIXI.Sprite.fromFrame("base_1");
+          tile.position.x = x * settings.TILE_SIZE;
+          tile.position.y = y * settings.TILE_SIZE;
+          container.addChild(tile);
+        }
+      }
+      tex.render(container);
+      this._base_sprite = new PIXI.Sprite(tex);
+      this._base_sprite.anchor.x = 0.5;
+      return this._base_sprite.anchor.y = 0;
     };
 
     Planet.prototype._updateTerrainBody = function() {

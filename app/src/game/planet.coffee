@@ -80,6 +80,10 @@ class Planet
     @_terrain_sprite.position.x = trn_pos.x
     @_terrain_sprite.position.y = trn_pos.y
 
+    base_pos = @universe.camera.worldToScreen(new b2Vec2(0, @depth))
+    @_base_sprite.position.x = base_pos.x
+    @_base_sprite.position.y = base_pos.y
+
   getBounds: () ->
     return {
       x: -@size / 2
@@ -219,7 +223,7 @@ class Planet
     h = thickness
     cx = 0
     cy = @depth + thickness / 2
-    num_points = 2#@depth / 2
+    # num_points = 2#@depth / 2
     min_y = @depth
     points = []
     # end_y = min_y - Math.random() * 2
@@ -234,43 +238,36 @@ class Planet
     # points.push({x: cx + (w / 2), y: cy + (h / 2)})
     # points.push({x: cx - (w / 2), y: cy + (h / 2)})
     points.push({x: cx - (w / 2), y: cy - (h /2)})
+    # points.push({x: cx - (w / 2) + @size/4, y: cy - (h /2)-2})
+    # points.push({x: cx - (w / 2) + @size/2, y: cy - (h /2)-1})
+    # points.push({x: cx - (w / 2) + 3*@size/4, y: cy - (h /2)-3})
     points.push({x: cx + (w / 2), y: cy - (h /2)})
-    # points.push({x: cx - (w / 2) + @size/4, y: cy - (h /2)}-2)
-    points.push({x: cx - (w / 2) + @size/2, y: cy - (h /2)-1})
-    # points.push({x: cx - (w / 2) + 3*@size/4, y: cy - (h /2)}-3)
     points.push({x: cx + (w / 2), y: cy + (h /2)})
     points.push({x: cx - (w / 2), y: cy + (h /2)})
 
     @_base_poly = points
 
-    # edge_w = Math.ceil(settings.WIDTH / settings.TILE_SIZE)
-    # w = (@size * settings.PPM) + (edge_w * settings.TILE_SIZE)
-    # h = (@depth + @MAX_TERRAIN_HEIGHT) * settings.PPM
+    edge_w = Math.ceil(settings.WIDTH / settings.TILE_SIZE)
+    w = (@size * settings.PPM) + (edge_w * settings.TILE_SIZE)
+    h = (@depth + thickness) * settings.PPM
 
-    # tex = new PIXI.RenderTexture(w, h)
-    # container = new PIXI.DisplayObjectContainer()
+    tex = new PIXI.RenderTexture(w, h)
+    container = new PIXI.DisplayObjectContainer()
 
-    # w_count = w / settings.TILE_SIZE #
-    # h_count = h / settings.TILE_SIZE
-    # for x in [0...w_count]
-    #   for y in [0...h_count]
-    #     tile = PIXI.Sprite.fromFrame("terrain_1")
-    #     tile.position.x = x * settings.TILE_SIZE
-    #     tile.position.y = y * settings.TILE_SIZE
-    #     container.addChild(tile)
-    # tex.render(container)
+    w_count = w / settings.TILE_SIZE #
+    h_count = h / settings.TILE_SIZE
+    for x in [0...w_count]
+      for y in [0...h_count]
+        tile = PIXI.Sprite.fromFrame("base_1")
+        tile.position.x = x * settings.TILE_SIZE
+        tile.position.y = y * settings.TILE_SIZE
+        container.addChild(tile)
+    tex.render(container)
 
-    # @_terrain_sprite = new PIXI.Sprite(tex)
-    # @_terrain_sprite.anchor.x = 0.5
-    # @_terrain_sprite.anchor.y = 1
-    # @_terrain_sprite.mask = @_terrain_mask
-
-    tile = PIXI.Sprite.fromFrame("base_1")
-    tile.anchor.x = 0.5
-    tile.anchor.y = 0.5
-    tile.position.x = 0
-    tile.position.y = 0
-    @_base_sprite = tile
+    @_base_sprite = new PIXI.Sprite(tex)
+    @_base_sprite.anchor.x = 0.5
+    @_base_sprite.anchor.y = 0
+    # @_base_sprite.mask = @_base_mask
 
   _updateTerrainBody: () ->
     @_unloadTerrain()
